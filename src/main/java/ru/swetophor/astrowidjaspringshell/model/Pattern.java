@@ -1,18 +1,14 @@
-package ru.swetophor.harmonix;
+package ru.swetophor.astrowidjaspringshell.model;
 
-import ru.swetophor.celestialmechanics.Astra;
-import ru.swetophor.celestialmechanics.AstraEntity;
-import ru.swetophor.celestialmechanics.ChartObject;
+import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ru.swetophor.celestialmechanics.CelestialMechanics.calculateStrength;
-import static ru.swetophor.celestialmechanics.CelestialMechanics.getArcForHarmonic;
-import static ru.swetophor.mainframe.Settings.getPrimalOrb;
+import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.calculateStrength;
+import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.getArcForHarmonic;
+import static ru.swetophor.astrowidjaspringshell.config.Settings.getPrimalOrb;
 
 /**
  * Олицетворяет группу связанных каким-то резонансом точек
@@ -21,15 +17,17 @@ import static ru.swetophor.mainframe.Settings.getPrimalOrb;
  * соответствующий резонанс; для принадлежности паттерну точка должна иметь
  * резонанс по крайней мере с одной из входящих в него точек.
  */
+@Getter
 public class Pattern {
-    List<Astra> astras = new ArrayList<>();
-    List<PatternElement> entries = new ArrayList<>();
-    int harmonic;
+    private final int harmonic;
+    private final List<PatternElement> entries = new ArrayList<>();
 
     ChartObject heaven; // TODO: категорически ненужный параметр, ибо мобыть синастрией
                         // нифига! он относится не к карте, а к карт-объекту, содержащему карты!
 
-    double totalClearance = 0.0;
+    private final Set<Chart> heavens = new HashSet<>();
+
+    private double totalClearance = 0.0;
 
     public Pattern(int harmonic, ChartObject host) {
         this.harmonic = harmonic;
@@ -49,7 +47,7 @@ public class Pattern {
      * @param astra добавляемая к паттерну астра.
      */
     public void addAstra(Astra astra) {
-        astras.add(astra);
+        heavens.add(astra.getHeaven());
         PatternElement added = new PatternElement(astra);
         for (PatternElement a : entries) {
             double clearance = getArcForHarmonic(astra, a.element, harmonic);
@@ -100,15 +98,25 @@ public class Pattern {
      * @return количество астр в паттерне.
      */
     public int size() {
-        return astras.size();
+        return entries.size();
+    }
+
+    /**
+     * Сообщает размерность, т.е. скольки картам принадлежат
+     * входящие в паттерн астры.
+     * @return  количество карт, к которым относятся элементы паттерна.
+     */
+    public int getDimension() {
+        return heavens.size();
     }
 
     public boolean isEmpty() {
-        return astras.isEmpty();
+        return entries.isEmpty();
     }
 
     public void addAllAstras(Pattern pattern) {
-        pattern.getAstras()
+        pattern.getEntries().stream()
+                .map(PatternElement::getElement)
                 .forEach(this::addAstra);
     }
 
@@ -141,23 +149,24 @@ public class Pattern {
      * наличествует.
      */
     public boolean isValid() {
-//        if (size() < 2)
-//            return false;
 
-        return IntStream.range(0, astras.size() - 1)
-                .anyMatch(i -> IntStream.range(i + 1, astras.size())
+        return IntStream.range(0, entries.size() - 1)
+                .anyMatch(i -> IntStream.range(i + 1, entries.size())
                         .anyMatch(j ->
-                                heaven.resonancePresent(astras.get(i), astras.get(j), harmonic)
+                                heaven.resonancePresent(
+                                        entries.get(i).getElement(),
+                                        entries.get(j).getElement(),
+                                        harmonic
+                                )
                         )
                 );
     }
 
-    public List<Astra> getAstras() {
-        return this.astras;
-    }
     // TODO: сделать считалку паттернов для синастрии
 
-    static class PatternElement {
+
+    @Getter
+    private class PatternElement {
         private final Astra element;
         private double clearanceSum;
 
@@ -166,13 +175,6 @@ public class Pattern {
         }
 
 
-        public Astra getElement() {
-            return this.element;
-        }
-
-        public double getClearanceSum() {
-            return this.clearanceSum;
-        }
     }
 
 }

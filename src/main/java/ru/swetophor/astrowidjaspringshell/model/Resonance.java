@@ -1,7 +1,8 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
+import lombok.Getter;
 import lombok.Setter;
-import ru.swetophor.celestialmechanics.CelestialMechanics;
+import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -9,11 +10,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ru.swetophor.celestialmechanics.CelestialMechanics.getArcForHarmonic;
-import static ru.swetophor.celestialmechanics.Mechanics.findMultiplier;
-import static ru.swetophor.celestialmechanics.Mechanics.secondFormat;
-import static ru.swetophor.harmonix.ResonanceType.*;
-import static ru.swetophor.mainframe.Interpreter.ResonanceDescription;
+import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.getArcForHarmonic;
+import static ru.swetophor.astrowidjaspringshell.model.Harmonics.findMultiplier;
+import static ru.swetophor.astrowidjaspringshell.provider.Mechanics.secondFormat;
+import static ru.swetophor.astrowidjaspringshell.provider.Interpreter.ResonanceDescription;
 
 /**
  * Гармонический анализ взаимодействия некоторых двух астр.
@@ -21,11 +21,8 @@ import static ru.swetophor.mainframe.Interpreter.ResonanceDescription;
  * для этой {@link #arc дуги} {@link Aspect Аспектов}.
  */
 @Setter
+@Getter
 public class Resonance {
-    /**
-     * Тип резонанса:
-     */
-    private final ResonanceType type;
     /**
      * Первая астра.
      */
@@ -61,19 +58,13 @@ public class Resonance {
      * @param ultimateHarmonic до какой гармоники продолжать анализ.
      */
     Resonance(Astra a, Astra b, double orb, int ultimateHarmonic) {
-        type = a == b ?
-                IN_SELF :
-                Astra.ofSameHeaven(a, b) ?
-                        IN_MOMENT :
-                        INTER_MOMENTS;
+        if (a == b)
+            throw new IllegalArgumentException("Одна и та же астра не делает резонанса сама с собой");
         astra_1 = a;
         astra_2 = b;
         arc = CelestialMechanics.getArc(a, b);
         this.orb = orb;
         this.ultimateHarmonic = ultimateHarmonic;
-
-        if (type == IN_SELF)
-            return;
 
         IntStream.rangeClosed(1, ultimateHarmonic).forEach(h -> {
             double arcInHarmonic = getArcForHarmonic(a, b, h);
@@ -120,43 +111,14 @@ public class Resonance {
         }
         for (Aspect aspect : getAspectsByStrength()) {
             sb.append(ResonanceDescription(aspect.getNumeric(), aspect.getMultiplicity()));
-            sb.append("Резонанс %d (x%d) - %s как %d (%.2f%%, %s)%n".formatted(
-                    aspect.getNumeric(),
-                    aspect.getMultiplicity(),
-                    aspect.strengthLevel(),
-                    aspect.getDepth(),
-                    aspect.getStrength(),
-                    secondFormat(aspect.getClearance(), true)));
+            sb.append(aspect);
         }
         return sb.toString();
     }
 
     public String resonancesOutput() {
-        StringBuilder sb = new StringBuilder();
-        switch (type) {
-            case IN_SELF -> sb.append("%n%c %s (%s)%n".formatted(
-                    astra_1.getSymbol(), astra_1.getZodiacDegree(),
-                    astra_1.getHeaven().getName()));
-            case IN_MOMENT -> {
-                sb.append("%n* Дуга между %c %s и %c %s (%s) = %s%n".formatted(
-                        astra_1.getSymbol(), astra_1.getZodiacDegree(),
-                        astra_2.getSymbol(), astra_2.getZodiacDegree(),
-                        astra_1.getHeaven().getName(),
-                        secondFormat(arc, true)));
-                sb.append(resoundsReport());
-            }
-            case INTER_MOMENTS -> {
-                sb.append("%n* Дуга между %c %s (%s) и %c %s (%s) = %s%n".formatted(
-                        astra_1.getSymbol(), astra_1.getZodiacDegree(),
-                        astra_1.getHeaven().getName(),
-                        astra_2.getSymbol(), astra_2.getZodiacDegree(),
-                        astra_2.getHeaven().getName(),
-                        secondFormat(arc, true)));
-                sb.append(resoundsReport());
-            }
-        }
-        return sb.toString();
-
+        return getTitle() +
+                resoundsReport();
     }
 
     private List<Aspect> getAspectsByStrength() {
@@ -169,9 +131,8 @@ public class Resonance {
     public String resoundsReport() {
         StringBuilder sb = new StringBuilder();
 
-        if (aspects.isEmpty()) {
+        if (aspects.isEmpty())
             sb.append("Ни одного резонанса до %d при орбисе %s%n".formatted(ultimateHarmonic, orb));
-        }
         getAspectsByStrength().forEach(aspect -> {
             sb.append(ResonanceDescription(aspect.getNumeric(), aspect.getMultiplicity()));
             sb.append("Резонанс %d/%d %s (%.0f%%) --- %.2f %n".formatted(
@@ -215,31 +176,19 @@ public class Resonance {
         return null;
     }
 
-    public ResonanceType getType() {
-        return this.type;
+    public String getTitle() {
+        return astra_1.getHeaven() == astra_2.getHeaven() ?
+                "%n* Дуга между %c %s и %c %s (%s) = %s%n".formatted(
+                        astra_1.getSymbol(), astra_1.getZodiacDegree(),
+                        astra_2.getSymbol(), astra_2.getZodiacDegree(),
+                        astra_1.getHeaven().getName(),
+                        secondFormat(arc, true)) :
+                "%n* Дуга между %c %s (%s) и %c %s (%s) = %s%n".formatted(
+                        astra_1.getSymbol(), astra_1.getZodiacDegree(),
+                        astra_1.getHeaven().getName(),
+                        astra_2.getSymbol(), astra_2.getZodiacDegree(),
+                        astra_2.getHeaven().getName(),
+                        secondFormat(arc, true));
     }
 
-    public Astra getAstra_1() {
-        return this.astra_1;
-    }
-
-    public Astra getAstra_2() {
-        return this.astra_2;
-    }
-
-    public double getArc() {
-        return this.arc;
-    }
-
-    public double getOrb() {
-        return this.orb;
-    }
-
-    public int getUltimateHarmonic() {
-        return this.ultimateHarmonic;
-    }
-
-    public List<Aspect> getAspects() {
-        return this.aspects;
-    }
 }

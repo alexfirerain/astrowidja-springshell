@@ -1,6 +1,6 @@
-package ru.swetophor.mainframe;
+package ru.swetophor.astrowidjaspringshell.provider;
 
-import ru.swetophor.celestialmechanics.Mechanics;
+import ru.swetophor.astrowidjaspringshell.model.Harmonics;
 
 public class Interpreter {
     public static String ResonanceDescription(int harmonic, int multiplier) {
@@ -59,7 +59,7 @@ public class Interpreter {
 
 
             default: return standard(
-                    Mechanics.formatMultipliers(Mechanics.multipliersExplicate(harmonic)),
+                    Harmonics.formatMultipliers(Harmonics.multipliersExplicate(harmonic)),
                     multiplier);
         }
     }

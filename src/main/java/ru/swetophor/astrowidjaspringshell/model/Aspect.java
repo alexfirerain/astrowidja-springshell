@@ -1,11 +1,13 @@
-package ru.swetophor.harmonix;
+package ru.swetophor.astrowidjaspringshell.model;
 
-import ru.swetophor.celestialmechanics.CelestialMechanics;
+import lombok.Getter;
+import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
 
 import java.util.List;
 
 import static java.lang.Math.floor;
-import static ru.swetophor.harmonix.Harmonics.findMultiplier;
+import static ru.swetophor.astrowidjaspringshell.model.Harmonics.findMultiplier;
+import static ru.swetophor.astrowidjaspringshell.provider.Mechanics.secondFormat;
 
 /**
  * Некоторая установленная для реальной дуги гармоническая кратность.
@@ -14,11 +16,16 @@ import static ru.swetophor.harmonix.Harmonics.findMultiplier;
  * и степенью точности (добротности) резонанса, определяемой как близость
  * реального небесного расстояния к дуге точного аспекта.
  */
+@Getter
 public class Aspect {
     /**
      * Гармоника, в которой аспект предстаёт соединением.
      * Т.е. число, на которое делится Круг, чтобы получить
      * дугу единичного резонанса для данной гармоники.
+     * -- GETTER --
+     *  Сообщает резонансное число аспекта.
+     *
+     * @return номер гармоники.
      */
     private final int numeric;              //
     /**
@@ -29,39 +36,13 @@ public class Aspect {
     private final int multiplicity;               //
 
     /**
-     * Сообщает резонансное число аспекта.
-     * @return номер гармоники.
-     */
-    public int getNumeric() {
-        return numeric;
-    }
-
-    public int getMultiplicity() {
-        return multiplicity;
-    }
-
-    /**
-     * Сообщает орбис аспекта, т.е. разность координаты и экзакта.
-     * @return разность фактического и чистого аспекта в градусах.
-     */
-    public double getClearance() {
-        return clearance;
-    }
-
-    /**
-     * Сообщает глубину аспекта, т.е. в скольки следующих
-     * после данной гармониках он сохраняется.
-     * @return 0, если аспект отсутствует;
-     *      1, если аспект присутствует только в этой гармонике;
-     *      n, если соединение присутствует в гармониках кратностью до n от данной.
-     */
-    public int getDepth() {
-        return depth;
-    }
-
-    /**
      * Разность дуги резонанса с дугой чистого аспекта, полученной как
      * (360° / гармоника) * множитель. Т.е. эффективный орбис аспекта.
+     * -- GETTER --
+     *  Сообщает орбис аспекта, т.е. разность координаты и экзакта.
+     *
+     * @return разность фактического и чистого аспекта в градусах.
+
      */
     private final double clearance;           //
 
@@ -96,6 +77,14 @@ public class Aspect {
     }
     /**
      * Точность аспекта через количество последующих гармоник, через кои проходит
+     * -- GETTER --
+     *  Сообщает глубину аспекта, т.е. в скольки следующих
+     *  после данной гармониках он сохраняется.
+     *
+     * @return 0, если аспект отсутствует;
+     *      1, если аспект присутствует только в этой гармонике;
+     *      n, если соединение присутствует в гармониках кратностью до n от данной.
+
      */
     private final int depth;
 
@@ -104,7 +93,7 @@ public class Aspect {
      *
      * @return строковое представление ранга точности.
      */
-    public String strengthLevel() {
+    public String getStrengthLevel() {
         if (depth <= 1) return "- приблизительный ";
         else if (depth == 2) return "- уверенный ";
         else if (depth <= 5) return "- глубокий ";
@@ -133,13 +122,19 @@ public class Aspect {
         return "✰✰✰✰✰";
     }
 
-    public double getStrength() {
-        return strength;
-    }
-
 
     public boolean hasResonance(int harmonic) {
         return harmonic % numeric == 0 && harmonic / numeric <= depth;
     }
 
+    @Override
+    public String toString() {
+        return "Резонанс %d (x%d) - %s как %d (%.2f%%, %s)%n".formatted(
+                numeric,
+                multiplicity,
+                getStrengthLevel(),
+                depth,
+                strength,
+                secondFormat(clearance, true));
+    }
 }

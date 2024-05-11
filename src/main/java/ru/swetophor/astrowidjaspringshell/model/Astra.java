@@ -1,32 +1,49 @@
-package ru.swetophor.celestialmechanics;
+package ru.swetophor.astrowidjaspringshell.model;
 
-import ru.swetophor.harmonix.Matrix;
+import lombok.Getter;
+import lombok.Setter;
+import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
 
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ru.swetophor.celestialmechanics.CelestialMechanics.getArcForHarmonic;
-import static ru.swetophor.celestialmechanics.CelestialMechanics.normalizeCoordinate;
+import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.getArcForHarmonic;
+import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.normalizeCoordinate;
 
 /**
- * Прототип небесного те́ла — объект, имеющий:
- * <li> идентификатор</li>
- * <li> положение</li>
- * <li> физические свойства</li>
- * <li> астральные свойства</li>
+ * Прототип небесного те́ла — объект,
+ * имеющий идентификатор (имя) и положение (карта и координата).
  */
+@Getter
+@Setter
 public class Astra {
     /**
      * Идентифицирующее имя астры.
+     * -- GETTER --
+     *  Сообщает название астры.
+     *
+     * @return название астры.
+
      */
+
     private String name;                                        // чо за астра
     /**
      * Ссылка на карту, в которой находится астра.
+     * -- GETTER --
+     *  Возвращает ссылку на карту, в которой находится астра.
+     *
+     * @return карту неба, в котором находится астра.
+
      */
     private Chart heaven;                                        // чья астра
     /**
      * Зодиакальное положение астры от 0°♈
+     * -- GETTER --
+     *  Сообщает зодиакальную позицию в виде вещественного числа.
+     *
+     * @return зодиакальное положение астры в небе от начала отсчёта.
+
      */
     private double zodiacPosition;                        // положение в Зодиаке
 
@@ -141,41 +158,6 @@ public class Astra {
     }
 
     /**
-     * Сообщает название астры.
-     *
-     * @return название астры.
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Возвращает ссылку на карту, в которой находится астра.
-     *
-     * @return карту неба, в котором находится астра.
-     */
-    public Chart getHeaven() {
-        return this.heaven;
-    }
-
-    /**
-     * Сообщает зодиакальную позицию в виде вещественного числа.
-     *
-     * @return зодиакальное положение астры в небе от начала отсчёта.
-     */
-    public double getZodiacPosition() {
-        return this.zodiacPosition;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setHeaven(Chart heaven) {
-        this.heaven = heaven;
-    }
-
-    /**
      * Устанавливает зодиакальную координату, предварительно нормализуя.
      *
      * @param zodiacPosition устанавливаемая зодиакальная координата в градусах.
@@ -272,16 +254,7 @@ public class Astra {
         return ZodiacSign.getZodiumOf(zodiacPosition);
     }
 
-    public Matrix getResonanceMatrix() {
-        return heaven.aspects;
-        // TODO: по поводу обращения к матрице синастрии вообще заново проархитектурить
-    }
-
-    public boolean isInDirectResonanceWith(Astra counterpart, int harmonic) {
-        return getResonanceMatrix().astrasInResonance(this, counterpart, harmonic);
-    }
-
-//    public boolean isInDirectResonanceWith(Astra counterpart, int harmonic) {
+    //    public boolean isInDirectResonanceWith(Astra counterpart, int harmonic) {
 //        double effectiveOrb = heaven != counterpart.getHeaven() && isHalfOrbsForDoubles() ?
 //                getPrimalOrb() / 2 : getPrimalOrb();
 //        return getArcInHarmonicWith(harmonic, counterpart) <= getPrimalOrb() && harmonic != 1

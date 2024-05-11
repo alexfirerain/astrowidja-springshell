@@ -1,4 +1,4 @@
-package ru.swetophor.mainframe;
+package ru.swetophor.astrowidjaspringshell.provider;
 
 import java.util.Arrays;
 
@@ -168,7 +168,7 @@ public class Decorator {
     }
 
 
-    static void print(String text) {
+    public static void print(String text) {
         System.out.println(text);
     }
 

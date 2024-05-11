@@ -1,4 +1,4 @@
-package ru.swetophor.celestialmechanics;
+package ru.swetophor.astrowidjaspringshell.model;
 
 import java.util.HashSet;
 import java.util.Set;

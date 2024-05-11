@@ -2,7 +2,7 @@ package ru.swetophor.astrowidjaspringshell.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import ru.swetophor.mainframe.Settings;
+import ru.swetophor.astrowidjaspringshell.config.Settings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ru.swetophor.celestialmechanics.CelestialMechanics.CIRCLE;
-import static ru.swetophor.harmonix.MatrixType.COSMOGRAM;
-import static ru.swetophor.harmonix.MatrixType.SYNASTRY;
+import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.CIRCLE;
+import static ru.swetophor.astrowidjaspringshell.model.MatrixType.COSMOGRAM;
+import static ru.swetophor.astrowidjaspringshell.model.MatrixType.SYNASTRY;
 
 /**
  * Двумерная таблица, получающая два массива астр
@@ -168,7 +168,6 @@ public class Matrix {
         if (astraOrdinal < 0 || astraOrdinal >= datum1.length)
             return null;
         return Arrays.stream(resonances[astraOrdinal])
-                .filter(r -> r.getType() != ResonanceType.IN_SELF)
                 .collect(Collectors.toList());
     }
 
@@ -187,7 +186,6 @@ public class Matrix {
             return null;
         return Arrays.stream(resonances)
                 .map(row -> row[astraOrdinal])
-                .filter(r -> r.getType() != ResonanceType.IN_SELF)
                 .collect(Collectors.toList());
     }
 

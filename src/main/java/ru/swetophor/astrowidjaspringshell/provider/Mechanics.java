@@ -1,16 +1,17 @@
 package ru.swetophor.astrowidjaspringshell.provider;
 
-import ru.swetophor.harmonix.Harmonics;
+import ru.swetophor.astrowidjaspringshell.model.Astra;
+import ru.swetophor.astrowidjaspringshell.model.AstraEntity;
+import ru.swetophor.astrowidjaspringshell.model.Chart;
+import ru.swetophor.astrowidjaspringshell.model.Harmonics;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.abs;
 import static java.lang.String.format;
-import static ru.swetophor.celestialmechanics.CelestialMechanics.*;
-import static ru.swetophor.celestialmechanics.ZodiacSign.zodiumIcon;
+import static ru.swetophor.astrowidjaspringshell.model.AstraEntity.*;
+import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.*;
+import static ru.swetophor.astrowidjaspringshell.model.ZodiacSign.zodiumIcon;
 
 /**
  * Инструментальный класс для решения
@@ -71,7 +72,7 @@ public class Mechanics {
         else
             degreeString.append(format("% 2d\"", coors[2]));
 
-        if (degreeString.length() == 0)
+        if (degreeString.isEmpty())
             return "0°";
 
         return degreeString.toString();
@@ -123,7 +124,7 @@ public class Mechanics {
 
 
     /**
-     *  преобразует эклиптическую долготу в зодиакальную
+     *  Преобразует эклиптическую долготу в зодиакальную
      * @param position эклиптическая долгота.
      * @return  строку, представляющую зодиакальную координату (знак + секундФормат без лишних нолей).
      */
@@ -133,62 +134,6 @@ public class Mechanics {
                         secondFormat(position % 30, true));
     }
 
-    /**
-     * Выдаёт список множителей данного числа (не считая единицы, естественно).
-     * @param number неотрицательное число, разлагаемое на множители.
-     * @return  список неравных единице множителей, дающих исходное число,
-     * от большего к меньшему. Для ноля {0}, для единицы {1}.
-     * @throws IllegalArgumentException при отрицательном аргументе.
-     */
-    public static List<Integer> multipliersExplicate(int number) {
-        if (number < 0) throw new IllegalArgumentException("функция работает с положительными числами");
-        if (number == 0) return List.of(0);
-        if (number == 1) return List.of(1);
-        List<Integer> multipliers = new ArrayList<>();
-
-        int divider = 2;
-        while(number > 1) {
-            if (divider > number / divider) {
-                multipliers.add(number);
-                break;
-            }
-//            System.out.println(number + " / " + divider);
-            if (number % divider == 0) {
-                multipliers.add(divider);
-                number /= divider;
-            } else {
-                divider++;
-            }
-        }
-
-        multipliers.sort(Comparator.reverseOrder());
-
-        return multipliers;
-    }
-
-
-
-    /**
-     * Вспомогательный метод нахождения крата аспекта
-     * @param resonance какой гармоники анализируется дуга.
-     * @param arc   анализируемая дуга.
-     * @param orb   первичный орбис, используемый при расчёте аспектов.
-     * @return  множитель аспекта заданной гармоники для заданной дуги.
-     */
-    public static int findMultiplier(int resonance, double arc, double orb) {
-        double single = CelestialMechanics.CIRCLE / resonance;
-        int multiplier = 1;
-        double orbHere = orb / resonance;
-        while (multiplier < resonance / 2)
-            if (abs(multiplier * single - arc) < orbHere) break;
-            else multiplier++;
-        return multiplier;
-    }
-
-    public static int multiSum(int number) {
-        return multipliersExplicate(number).stream()
-                .mapToInt(Integer::intValue).sum();
-    }
 
     public static void displayMultipliers(int upto) {
         StringBuilder output = new StringBuilder();
@@ -196,12 +141,12 @@ public class Mechanics {
             output.append(i > 999 ?
                     "%d → ".formatted(i) :
                     "%3d → ".formatted(i));
-            var multi = multipliersExplicate(i);
+            var multi = Harmonics.multipliersExplicate(i);
             output.append(multi.stream()
                     .map(String::valueOf)
                     .collect(Collectors.joining(" + ")));
             if (multi.size() > 1)
-                output.append(" = ").append(multiSum(i));
+                output.append(" = ").append(Harmonics.multiSum(i));
             output.append("\n");
         }
         System.out.println(output);
@@ -214,35 +159,6 @@ public class Mechanics {
         Harmonics.buildHeavensWithHarmonics(144);
     }
 
-    /**
-     * Возвращает форматированную строку с переданными числами через "х",
-     * вся группа заключена в <>.
-     *
-     * @param multipliers числа (множители, которые хотим форматировать).
-     * @return форматированное представление множителей числа, переданных в аргумент как список.
-     */
-    public static String formatMultipliers(List<Integer> multipliers) {
-        return "<%s>"
-                .formatted(multipliers.stream().map(String::valueOf)
-                        .collect(Collectors.joining("x")));
-    }
-
-
-    /**
-     * Скажет, является ли данная гармоника кратной некоторой другой гармонике.
-     * @param harmonic  число резонанса, которое проверяем на кратность.
-     * @param numeric   число резонанса, на кратность с которым проверяется.
-     * @return  {@code true}, если один из простых множителей первого аргумента совпадает
-     * со вторым аргументом.
-     */
-    public static boolean isMultiplied(int harmonic, int numeric) {
-        return multipliersExplicate(harmonic)
-                .contains(numeric);
-    }
-
-    public static boolean isMultiple(int number, int multiplier) {
-        return number % multiplier == 0;
-    }
 
     public static Chart composite(Chart chart_a, Chart chart_b) {
         if (chart_a == null || chart_b == null)

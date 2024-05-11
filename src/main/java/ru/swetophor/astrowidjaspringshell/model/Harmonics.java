@@ -1,6 +1,7 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
-import ru.swetophor.celestialmechanics.CelestialMechanics;
+import lombok.Getter;
+import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,9 +12,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.lang.Math.abs;
-import static ru.swetophor.celestialmechanics.CelestialMechanics.normalizeArc;
+import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.normalizeArc;
 
-public class Harmonics extends Number implements Comparable<Harmonics> {
+@Getter
+public final class Harmonics extends Number implements Comparable<Harmonics> {
     /**
      * Номинал: какому числу кратность задаёт гармонику.
      */
@@ -110,7 +112,6 @@ public class Harmonics extends Number implements Comparable<Harmonics> {
                 multipliers.add(number);
                 break;
             }
-//            System.out.println(number + " / " + divider);
             if (number % divider == 0) {
                 multipliers.add(divider);
                 number /= divider;
@@ -136,10 +137,12 @@ public class Harmonics extends Number implements Comparable<Harmonics> {
         int multiplier = 1;
         double orbHere = orb / resonance;
         while (multiplier < resonance / 2)
-            if (abs(multiplier * single - arc) < orbHere) break;
+            if (abs(single * multiplier - arc) < orbHere) break;
             else multiplier++;
         return multiplier;
     }
+
+
 
     public static int multiSum(int number) {
         return multipliersExplicate(number).stream()
@@ -159,8 +162,20 @@ public class Harmonics extends Number implements Comparable<Harmonics> {
                         .collect(Collectors.joining("x")));
     }
 
-    public int getNumber() {
-        return number;
+    /**
+     * Скажет, является ли данная гармоника кратной некоторой другой гармонике.
+     * @param harmonic  число резонанса, которое проверяем на кратность.
+     * @param numeric   число резонанса, на кратность с которым проверяется.
+     * @return  {@code true}, если один из простых множителей первого аргумента совпадает
+     * со вторым аргументом.
+     */
+    public static boolean isMultiplied(int harmonic, int numeric) {
+        return multipliersExplicate(harmonic)
+                .contains(numeric);
+    }
+
+    public static boolean isMultiple(int number, int multiplier) {
+        return number % multiplier == 0;
     }
 
 

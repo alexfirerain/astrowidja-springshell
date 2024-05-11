@@ -1,1 +1,12 @@
-spring.application.name=astrowidja-springshell
+logging:
+  level:
+    root: OFF
+spring:
+  main:
+    banner-mode: off
+    web-application-type: none
+  application:
+    name: astrowidja-springshell
+
+astrowidja:
+    settings: "settings.ini"
