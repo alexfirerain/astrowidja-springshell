@@ -1,5 +1,7 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
+import jakarta.validation.constraints.NotNull;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +58,8 @@ public class PatternAnalysis implements Iterable<Map.Entry<Integer, List<Pattern
      *
      * @return an Iterator.
      */
+    @SuppressWarnings("NullableProblems")
+    @NotNull
     @Override
     public Iterator<Map.Entry<Integer, List<Pattern>>> iterator() {
         return listMap.entrySet().iterator();

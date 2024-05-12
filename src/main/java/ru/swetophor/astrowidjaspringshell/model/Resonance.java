@@ -2,6 +2,7 @@ package ru.swetophor.astrowidjaspringshell.model;
 
 import lombok.Getter;
 import lombok.Setter;
+import ru.swetophor.astrowidjaspringshell.config.Settings;
 import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
 
 import java.util.ArrayList;
@@ -54,16 +55,23 @@ public class Resonance {
      *
      * @param a                первая астра резонанса.
      * @param b                вторая астра резонанса.
-     * @param orb              первичный орбис резонанса.
+     * @param primalOrb              первичный орбис резонанса для соединений
+     *                              (должен предоставляться {@link Settings#getPrimalOrb()}),
+     *                              сокращение для синастрий осуществляется внутри метода
+     *                               на основании глобальной настройки {@link Settings#isHalfOrbsForDoubles()}.
      * @param ultimateHarmonic до какой гармоники продолжать анализ.
      */
-    Resonance(Astra a, Astra b, double orb, int ultimateHarmonic) {
+    Resonance(Astra a, Astra b, double primalOrb, int ultimateHarmonic) {
         if (a == b)
             throw new IllegalArgumentException("Одна и та же астра не делает резонанса сама с собой");
         astra_1 = a;
         astra_2 = b;
         arc = CelestialMechanics.getArc(a, b);
-        this.orb = orb;
+        // возможно, для более чем двойных карт брать ещё пропорционально меньше? наверное всё же нет
+        this.orb =
+                a.getHeaven() != b.getHeaven() && Settings.isHalfOrbsForDoubles() ?
+                primalOrb / 2 :
+                primalOrb;
         this.ultimateHarmonic = ultimateHarmonic;
 
         IntStream.rangeClosed(1, ultimateHarmonic).forEach(h -> {
@@ -71,6 +79,16 @@ public class Resonance {
             if (arcInHarmonic < orb && isNewSimple(h))
                 aspects.add(new Aspect(h, arcInHarmonic, arc, orb));
         });
+    }
+
+    /**
+     * Конструктор резонанса, использующий глобальные значения
+     * первичного орба и количества анализируемых гармоник.
+     * @param a первая астра резонанса.
+     * @param b вторая астра резонанса.
+     */
+    Resonance(Astra a, Astra b) {
+        this(a, b, Settings.getPrimalOrb(), Settings.getEdgeHarmonic());
     }
 
     /**
@@ -145,6 +163,11 @@ public class Resonance {
         return sb.toString();
     }
 
+    /**
+     * Сообщает,
+     * @param harmonic
+     * @return
+     */
     public boolean hasResonanceElement(int harmonic) {
         return aspects.stream()
                 .anyMatch(a -> a.getMultipliers().contains(harmonic));

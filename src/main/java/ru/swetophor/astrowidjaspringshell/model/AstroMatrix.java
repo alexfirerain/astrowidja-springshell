@@ -16,6 +16,7 @@ public class AstroMatrix {
                 .flatMap(c -> c.getAstras().stream())
                 .toArray(Astra[]::new);
         buildIndex();
+        buildMatrix();
     }
 
     private void buildIndex() {
@@ -24,7 +25,8 @@ public class AstroMatrix {
         for (Chart chart : heavens) {
             builtIndex.put(chart, new HashMap<>());
             var astraMap = builtIndex.get(chart);
-            for (Astra astra : chart.getAstras()) astraMap.put(astra, counter++);
+            for (Astra astra : chart.getAstras())
+                astraMap.put(astra, counter++);
         }
         index = builtIndex;
     }
@@ -39,9 +41,9 @@ public class AstroMatrix {
 
     private void buildMatrix() {
         Resonance[][] builtMatrix = new Resonance[allAstras.length][allAstras.length];
-        for (int i = 0; i < allAstras.length; i++)
-            for (int j = i; j < allAstras.length; j++)
-                matrix[i][j] = new Resonance(allAstras[i], allAstras[j], Settings.getPrimalOrb(), Settings.getEdgeHarmonic());
+        for (int i = 0; i < allAstras.length - 1; i++)
+            for (int j = i + 1; j < allAstras.length; j++)
+                matrix[i][j] = new Resonance(allAstras[i], allAstras[j]);
         matrix = builtMatrix;
     }
 

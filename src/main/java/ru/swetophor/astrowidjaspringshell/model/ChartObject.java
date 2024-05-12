@@ -12,6 +12,7 @@ public abstract class ChartObject {
 
     public ChartObject(String name) {
         this.name = name;
+        matrix = new AstroMatrix(getData());
     }
 
     public abstract Chart[] getData();
