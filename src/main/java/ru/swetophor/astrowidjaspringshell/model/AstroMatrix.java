@@ -1,7 +1,5 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
-import ru.swetophor.astrowidjaspringshell.config.Settings;
-
 import java.util.*;
 
 public class AstroMatrix {
@@ -9,6 +7,10 @@ public class AstroMatrix {
     private final Chart[] heavens;
 
     private final Astra[] allAstras;
+
+    private Map<Chart, Map<Astra, Integer>> index;
+
+    private Resonance[][] matrix;
 
     public AstroMatrix(Chart... charts) {
         heavens = charts;
@@ -31,13 +33,9 @@ public class AstroMatrix {
         index = builtIndex;
     }
 
-    private Map<Chart, Map<Astra, Integer>> index;
-
     private int astraIndex(Astra astra) {
         return index.get(astra.getHeaven()).get(astra);
     }
-
-    private Resonance[][] matrix;
 
     private void buildMatrix() {
         Resonance[][] builtMatrix = new Resonance[allAstras.length][allAstras.length];
@@ -54,6 +52,7 @@ public class AstroMatrix {
                 matrix[iA][iB] :
                 matrix[iB][iA];
     }
+
     public boolean inResonance(Astra a, Astra b, int harmonic) {
         return getResonanceFor(a,b).hasGivenHarmonic(harmonic);
     }

@@ -164,13 +164,15 @@ public class Resonance {
     }
 
     /**
-     * Сообщает,
-     * @param harmonic
-     * @return
+     * Сообщает, что запрашиваемое число присутствует
+     * среди множителей хотя бы одного из аспектов в резонансе.
+     * @param harmonic проверяемое на кратность гармоническое число.
+     * @return  {@code true}, если резонансное число хотя бы одного
+     * аспекта является кратным запрашиваемому числу, {@code false}в ином случае.
      */
     public boolean hasResonanceElement(int harmonic) {
         return aspects.stream()
-                .anyMatch(a -> a.getMultipliers().contains(harmonic));
+                .anyMatch(a -> a.hasMultiplier(harmonic));
     }
 
     public boolean hasGivenHarmonic(int harmonic) {
@@ -199,6 +201,14 @@ public class Resonance {
         return null;
     }
 
+    /**
+     * <p>Выдаёт строку, описывающую резонанс в виде:</p>
+     * <p>для аспекта внутри одной карты:</p>
+     * "* Дуга между {символ} {координата} и {символ} {координата} ({карта})"
+     * <p>для аспекта между разными картами:</p>
+     * "* Дуга между {символ} {координата} ({карта}) и {символ} {координата} ({карта})"
+     * @return
+     */
     public String getTitle() {
         return astra_1.getHeaven() == astra_2.getHeaven() ?
                 "%n* Дуга между %c %s и %c %s (%s) = %s%n".formatted(

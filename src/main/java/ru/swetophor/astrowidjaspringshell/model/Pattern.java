@@ -20,21 +20,17 @@ import static ru.swetophor.astrowidjaspringshell.config.Settings.getPrimalOrb;
 @Getter
 public class Pattern {
     private final int harmonic;
+    private final AstroMatrix analysis;
     private final List<PatternElement> entries = new ArrayList<>();
-
-    ChartObject heaven; // TODO: категорически ненужный параметр, ибо мобыть синастрией
-                        // нифига! он относится не к карте, а к карт-объекту, содержащему карты!
-
     private final Set<Chart> heavens = new HashSet<>();
-
     private double totalClearance = 0.0;
 
-    public Pattern(int harmonic, ChartObject host) {
+    public Pattern(int harmonic, AstroMatrix host) {
         this.harmonic = harmonic;
-        this.heaven = host;
+        this.analysis = host;
     }
 
-    public Pattern(int harmonic, List<Astra> astras, ChartObject host) {
+    public Pattern(int harmonic, List<Astra> astras, AstroMatrix host) {
         this(harmonic, host);
         astras.forEach(this::addAstra);
     }
@@ -153,7 +149,7 @@ public class Pattern {
         return IntStream.range(0, entries.size() - 1)
                 .anyMatch(i -> IntStream.range(i + 1, entries.size())
                         .anyMatch(j ->
-                                heaven.resonancePresent(
+                                analysis.inResonance(
                                         entries.get(i).getElement(),
                                         entries.get(j).getElement(),
                                         harmonic

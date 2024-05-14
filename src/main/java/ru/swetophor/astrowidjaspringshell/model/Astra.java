@@ -255,7 +255,7 @@ public class Astra {
     }
 
     //    public boolean isInDirectResonanceWith(Astra counterpart, int harmonic) {
-//        double effectiveOrb = heaven != counterpart.getHeaven() && isHalfOrbsForDoubles() ?
+//        double effectiveOrb = analysis != counterpart.getAnalysis() && isHalfOrbsForDoubles() ?
 //                getPrimalOrb() / 2 : getPrimalOrb();
 //        return getArcInHarmonicWith(harmonic, counterpart) <= getPrimalOrb() && harmonic != 1
 //                || getArc(getZodiacPosition(), counterpart.getZodiacPosition()) <= effectiveOrb;
