@@ -5,9 +5,7 @@ import lombok.Setter;
 import ru.swetophor.astrowidjaspringshell.config.Settings;
 import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -19,7 +17,9 @@ import static ru.swetophor.astrowidjaspringshell.provider.Interpreter.ResonanceD
 /**
  * Гармонический анализ взаимодействия некоторых двух астр.
  * Содержит ссылки на две точки (астры) и {@link #aspects список} рассчитанных
- * для этой {@link #arc дуги} {@link Aspect Аспектов}.
+ * для этой {@link #arc дуги} {@link Aspect аспектов}.
+ * Если при определённом сочетании параметров для данной дуги
+ * не будет определено ни одного аспекта, список аспектов будет пуст.
  */
 @Setter
 @Getter
@@ -50,6 +50,8 @@ public class Resonance {
      */
     private List<Aspect> aspects = new ArrayList<>();
 
+    private Set<Chart> heavens = new HashSet<>(2);
+
     /**
      * Получение массива аспектов для дуги между двумя астрами (конструктор)
      *
@@ -66,10 +68,12 @@ public class Resonance {
             throw new IllegalArgumentException("Одна и та же астра не делает резонанса сама с собой");
         astra_1 = a;
         astra_2 = b;
+        heavens.add(a.getHeaven());
+        heavens.add(b.getHeaven());
         arc = CelestialMechanics.getArc(a, b);
         // возможно, для более чем двойных карт брать ещё пропорционально меньше? наверное всё же нет
         this.orb =
-                a.getHeaven() != b.getHeaven() && Settings.isHalfOrbsForDoubles() ?
+                isSynastric() && Settings.isHalfOrbsForDoubles() ?
                 primalOrb / 2 :
                 primalOrb;
         this.ultimateHarmonic = ultimateHarmonic;
@@ -121,6 +125,14 @@ public class Resonance {
         return true;
     }
 
+    public boolean isSynastric() {
+        return heavens.size() == 2;
+    }
+
+    public boolean isNonSynastric() {
+        return heavens.size() == 1;
+    }
+
     private String resoundsInfo() {
         StringBuilder sb = new StringBuilder();
 
@@ -167,24 +179,37 @@ public class Resonance {
      * Сообщает, что запрашиваемое число присутствует
      * среди множителей хотя бы одного из аспектов в резонансе.
      * @param harmonic проверяемое на кратность гармоническое число.
-     * @return  {@code true}, если резонансное число хотя бы одного
-     * аспекта является кратным запрашиваемому числу, {@code false}в ином случае.
+     * @return  {@code true}, если резонансное число хотя бы одного аспекта, определённого
+     * для этого резонанса, является кратным запрашиваемому числу, {@code false}в ином случае.
      */
     public boolean hasResonanceElement(int harmonic) {
         return aspects.stream()
                 .anyMatch(a -> a.hasMultiplier(harmonic));
     }
 
+    /**
+     * Сообщает, что среди аспектов в резонансе присутствует указанное резонансное число.
+     * @param harmonic проверяемая на наличие резонанса гармоника.
+     * @return  {@code true}, если среди аспектов, определённых для этого резонанса,
+     * присутствует указанное число, {@code false} в ином случае.
+     * При этом, например, аспект трин хоть и присутствует в карте 6-й гармоники как соединение,
+     * но для harmonic = 6 имеющий его объект резонанса вернёт {@code false}.
+     */
     public boolean hasGivenHarmonic(int harmonic) {
         return aspects.stream()
                 .anyMatch(a -> a.getNumeric() == harmonic);
     }
 
+    /**
+     * Сообщает, что в указанной гармонике этот резонанс предстаёт соединением.
+     * @param harmonic проверяемое на наличие резонанса число.
+     * @return  {@code true}, если астры резонанса имеют связь (резонанс) по
+     * указанной гармонике, как определяется методом {@link Aspect#hasResonance(int) hasResonance()}.
+     */
     public boolean hasHarmonicPattern(int harmonic) {
         return aspects.stream()
                 .anyMatch(a -> a.hasResonance(harmonic));
     }
-
 
     /**
      * Возвращает ту астру резонанса, которая не равна указанной.
@@ -204,24 +229,27 @@ public class Resonance {
     /**
      * <p>Выдаёт строку, описывающую резонанс в виде:</p>
      * <p>для аспекта внутри одной карты:</p>
-     * "* Дуга между {символ} {координата} и {символ} {координата} ({карта})"
+     * {@code * Дуга между {символ} {координата} и {символ} {координата} ({карта}) = {дуга}}
      * <p>для аспекта между разными картами:</p>
-     * "* Дуга между {символ} {координата} ({карта}) и {символ} {координата} ({карта})"
-     * @return
+     * {@code * Дуга между {символ} {координата} ({карта}) и {символ} {координата} ({карта}) = {дуга}}
+     * @return строку, рассказывающую, между какими астрами это дуга,
+     * по которой вычислены аспекты, и какая у ней величина в градусах.
      */
     public String getTitle() {
-        return astra_1.getHeaven() == astra_2.getHeaven() ?
-                "%n* Дуга между %c %s и %c %s (%s) = %s%n".formatted(
-                        astra_1.getSymbol(), astra_1.getZodiacDegree(),
-                        astra_2.getSymbol(), astra_2.getZodiacDegree(),
-                        astra_1.getHeaven().getName(),
-                        secondFormat(arc, true)) :
+        return isSynastric() ?
+
                 "%n* Дуга между %c %s (%s) и %c %s (%s) = %s%n".formatted(
-                        astra_1.getSymbol(), astra_1.getZodiacDegree(),
-                        astra_1.getHeaven().getName(),
-                        astra_2.getSymbol(), astra_2.getZodiacDegree(),
-                        astra_2.getHeaven().getName(),
-                        secondFormat(arc, true));
+                astra_1.getSymbol(), astra_1.getZodiacDegree(),
+                astra_1.getHeaven().getName(),
+                astra_2.getSymbol(), astra_2.getZodiacDegree(),
+                astra_2.getHeaven().getName(),
+                secondFormat(arc, true)) :
+
+                "%n* Дуга между %c %s и %c %s (%s) = %s%n".formatted(
+                astra_1.getSymbol(), astra_1.getZodiacDegree(),
+                astra_2.getSymbol(), astra_2.getZodiacDegree(),
+                astra_1.getHeaven().getName(),
+                secondFormat(arc, true));
     }
 
 }

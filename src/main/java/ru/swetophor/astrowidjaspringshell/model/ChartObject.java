@@ -8,19 +8,23 @@ import lombok.Setter;
 public abstract class ChartObject {
 //    protected ChartType type;
     protected String name;
-    protected AstroMatrix matrix;
+//    protected AstroMatrix matrix;
 
     public ChartObject(String name) {
         this.name = name;
-        matrix = new AstroMatrix(getData());
+//        matrix = new AstroMatrix(getData());
     }
 
     public abstract Chart[] getData();
-    public abstract boolean resonancePresent(Astra a, Astra b, int harmonic);
+
     public abstract int getDimension();
 
+    // этот функционал видимо выносится в AstroMatrix,
+    // иже отделяется от карты (которая теперь просто набор астр)
+    public abstract boolean resonancePresent(Astra a, Astra b, int harmonic);
+
     /**
-     * Выдаёт имя каты. Если оно длиннее указанного предела,
+     * Выдаёт имя карты. Если оно длиннее указанного предела,
      * выдаёт его первые буквы и символ "…" в конце, так чтобы
      * общая длина строки была равна указанному пределу.
      *

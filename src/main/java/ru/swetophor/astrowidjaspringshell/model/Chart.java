@@ -59,7 +59,7 @@ public class Chart extends ChartObject {
         return 1;
     }
 
-    private void addAstra(Astra astra) {
+    public void addAstra(Astra astra) {
         astra.setHeaven(this);
         var name = astra.getName();
         for (int i = 0; i < astras.size(); i++) {
@@ -71,4 +71,10 @@ public class Chart extends ChartObject {
         }
     }
 
+    public Astra getAstra(String name) {
+        return astras.stream()
+                .filter(a -> a.getName().equals(name))
+                .findFirst()
+                .orElse(null);
+    }
 }

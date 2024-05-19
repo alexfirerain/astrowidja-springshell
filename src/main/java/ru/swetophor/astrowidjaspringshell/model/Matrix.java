@@ -22,6 +22,7 @@ import static ru.swetophor.astrowidjaspringshell.model.MatrixType.SYNASTRY;
  */
 @Setter
 @Getter
+@Deprecated
 public class Matrix {
     /**
      * Множество астр, от которых вычисляются резонансы.

@@ -20,30 +20,14 @@ import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.nor
 public class Astra {
     /**
      * Идентифицирующее имя астры.
-     * -- GETTER --
-     *  Сообщает название астры.
-     *
-     * @return название астры.
-
      */
-
     private String name;                                        // чо за астра
     /**
-     * Ссылка на карту, в которой находится астра.
-     * -- GETTER --
-     *  Возвращает ссылку на карту, в которой находится астра.
-     *
-     * @return карту неба, в котором находится астра.
-
+     * Ссылка на карту неба, в которой находится астра.
      */
     private Chart heaven;                                        // чья астра
     /**
-     * Зодиакальное положение астры от 0°♈
-     * -- GETTER --
-     *  Сообщает зодиакальную позицию в виде вещественного числа.
-     *
-     * @return зодиакальное положение астры в небе от начала отсчёта.
-
+     * Зодиакальное положение астры от 0°♈ в градусах как вещественное число от 0 до 360ю
      */
     private double zodiacPosition;                        // положение в Зодиаке
 
@@ -215,7 +199,7 @@ public class Astra {
      * название карты, в которой расположена астра.
      */
     public String getSymbolWithOwner() {
-        return "%s (%s)".formatted(getSymbol(), heaven.getShortenedName(8));
+        return "%c (%s)".formatted(getSymbol(), heaven.getShortenedName(8));
     }
 
     /**
@@ -252,6 +236,19 @@ public class Astra {
      */
     public ZodiacSign getZodiacSign() {
         return ZodiacSign.getZodiumOf(zodiacPosition);
+    }
+
+    /**
+     * Сообщает, что эта астра и данная — одна и та же,
+     * то есть астра с тем же именем и в том же небе.
+     * При этом координата сравниваемой астры может отличаться.
+     * @param another сравниваемая астра.
+     * @return  {@code true}, если сравниваем с астрой с тем же
+     * именем и в той же карте.
+     */
+    public boolean isTheSame(Astra another) {
+        if (another == null) return false;
+        return name.equals(another.getName()) && heaven == another.getHeaven();
     }
 
     //    public boolean isInDirectResonanceWith(Astra counterpart, int harmonic) {

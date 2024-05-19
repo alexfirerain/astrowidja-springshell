@@ -160,6 +160,15 @@ public class Mechanics {
     }
 
 
+    /**
+     * Создаёт композитную карту из двух данных карт. В композите каждая астра
+     * получает среднюю координату между координатами этой астры в двух картах.
+     * В композит попадают только те астры, которые есть в обеих картах.
+     * Меркурий и Венера гарантированно помещаются в той же части Неба, что Солнце.
+     * @param chart_a   первая карта для композита.
+     * @param chart_b   вторая карта для композита.
+     * @return  композитную карту, среднюю между двух данных карт.
+     */
     public static Chart composite(Chart chart_a, Chart chart_b) {
         if (chart_a == null || chart_b == null)
             throw new IllegalArgumentException("карта для композита не найдена");
@@ -169,19 +178,21 @@ public class Mechanics {
         Astra sun = null, mercury = null, venus = null;
         for (Astra astra : chart_a.getAstras()) {
             Astra counterpart = chart_b.getAstra(astra.getName());
-            if (counterpart != null) {
-                Astra compositeAstra = new Astra(astra.getName(),
-                        findMedian(astra.getZodiacPosition(),
-                                counterpart.getZodiacPosition()));
-                composite.addAstra(compositeAstra);
-                AstraEntity innerBody = AstraEntity.getEntityByName(compositeAstra.getName());
-                if (innerBody != null)
-                    switch (innerBody) {
-                        case SOL -> sun = compositeAstra;
-                        case MER -> mercury = compositeAstra;
-                        case VEN -> venus = compositeAstra;
-                    }
-            }
+            if (counterpart == null) continue;
+
+            Astra compositeAstra = new Astra(astra.getName(),
+                    findMedian(astra.getZodiacPosition(),
+                            counterpart.getZodiacPosition()));
+            composite.addAstra(compositeAstra);
+
+            AstraEntity innerBody = AstraEntity.getEntityByName(compositeAstra.getName());
+            if (innerBody != null)
+                switch (innerBody) {
+                    case SOL -> sun = compositeAstra;
+                    case MER -> mercury = compositeAstra;
+                    case VEN -> venus = compositeAstra;
+                }
+
         }
 
         if (sun != null) {
@@ -200,7 +211,7 @@ public class Mechanics {
     /**
      * Дополняет к строке расширение файла Астровидьи, если строка
      * ещё не оканчивается на него. Если второй параметр {@code ДА},
-     * раширение используется {@code .awc}, иначе {@code .awb}.
+     * расширение используется {@code .awc}, иначе {@code .awb}.
      * @param filename имя файла, которое снабжается расширением.
      * @param asAwc    использовать ли расширение {@code .awc} (иначе {@code .awb}).
      * @return  строку с добавленным, если было необходимо, расширением файла.
