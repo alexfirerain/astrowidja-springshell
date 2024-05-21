@@ -5,6 +5,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.util.stream.IntStream.range;
+
 public class AstroMatrix {
     /**
      * Карты, на основе которых рассчитана Матрица,
@@ -16,7 +18,7 @@ public class AstroMatrix {
      * следуют в порядке, как в {@link #heavens}, в каждом блоке астры
      * следуют в порядке, возвращённом {@link Chart#getAstras() getAstras()}.
       */
-    private final Astra[] allAstras;
+    private final List<Astra> allAstras;
     /**
      * Мапа в ОЗУ для быстрого получения номера астры в массиве {@link #allAstras}.
      * Реально ли это быстрее, чем {@code indexOf()}, не факт, но всё же.
@@ -41,7 +43,7 @@ public class AstroMatrix {
         // создание общего массива астр
         allAstras = Arrays.stream(heavens)
                 .flatMap(c -> c.getAstras().stream())
-                .toArray(Astra[]::new);
+                .toList();
 
         // построение индекса астр
         index = new HashMap<>();
@@ -54,10 +56,10 @@ public class AstroMatrix {
         }
 
         // построение матрицы резонансов
-        matrix = new Resonance[allAstras.length][allAstras.length];
-        for (int i = 0; i < allAstras.length - 1; i++)
-            for (int j = i + 1; j < allAstras.length; j++)
-                matrix[i][j] = new Resonance(allAstras[i], allAstras[j]);
+        matrix = new Resonance[allAstras.size()][allAstras.size()];
+        for (int i = 0; i < allAstras.size() - 1; i++)
+            for (int j = i + 1; j < allAstras.size(); j++)
+                matrix[i][j] = new Resonance(allAstras.get(i), allAstras.get(j));
     }
 
     /**
@@ -105,7 +107,7 @@ public class AstroMatrix {
      * @param b вторая проверяемая астра.
      * @param harmonic  гармоника, явная связь по которой проверяется.
      * @return  {@code true}, если между указанными астрами существует
-     * яврный резонанс по указанной гармонике, в противном случае {@code false}.
+     * явный резонанс по указанной гармонике, в противном случае {@code false}.
      */
     public boolean inResonance(Astra a, Astra b, int harmonic) {
         return getResonanceFor(a,b).hasGivenHarmonic(harmonic);
@@ -122,7 +124,7 @@ public class AstroMatrix {
         int index = astraIndex(a);
         int i = 0, j = index;
         boolean turning = false;
-        while (i + j < allAstras.length + index - 1) {
+        while (i + j < allAstras.size() + index - 1) {
             if (turning) j++;
             if (i == j) {
                 turning = true;
@@ -141,9 +143,9 @@ public class AstroMatrix {
      * @return  поток объектов-резонансов, начиная с первой планеты первой карты.
      */
     public Stream<Resonance> stream() {
-        return IntStream.range(0, allAstras.length - 1)
+        return IntStream.range(0, allAstras.size() - 1)
                 .mapToObj(i -> Arrays.asList(matrix[i])
-                        .subList(i + 1, allAstras.length))
+                        .subList(i + 1, allAstras.size()))
                 .flatMap(Collection::stream);
     }
 
@@ -164,18 +166,119 @@ public class AstroMatrix {
                 .filter(r -> r.getHeavens().containsAll(Set.of(chart1, chart2)))
                 .toList();
     }
-//    private static void testIJ(int index, int quantity) {
-//        int i = 0, j = index;
-//        boolean turning = false;
-//        while (i + j < quantity + index - 1) {
-//            if (turning) j++;
-//            if (i == j) {
-//                turning = true;
-//                continue;
-//            }
-//            System.out.printf("%d/%d ", i, j);
-//            if (!turning) i++;
-//        }
-//        System.out.println();
-//    }
+
+    /**
+     * Находит и возвращает список всех паттернов, образованных астрами
+     * данной карты по указанной гармонике.
+     *
+     * @param harmonic гармоника, по которой выделяются паттерны.
+     * @return список паттернов из астр этой карты, резонирующих
+     * по указанной гармонике, сортированный по средней силе.
+     * Если ни одного паттерна не обнаруживается, то пустой список.
+     */
+    public List<Pattern> findPatterns(int harmonic) {
+        boolean[] analyzed = new boolean[allAstras.size()];
+        return range(0, allAstras.size())
+                .filter(i -> !analyzed[i])
+                .mapToObj(i -> gatherResonants(i, harmonic, analyzed))
+                .filter(Pattern::isValid)
+                .sorted(Comparator.comparingDouble(Pattern::getAverageStrength).reversed())
+                .toList();
+    }
+
+    /**
+     * Выдаёт паттерн, состоящий из астр данной карты, связанных с указанной астрой
+     * по указанной гармонике напрямую или посредством других астр.
+     * Исходная астра помещается сразу в паттерн, её номер отмечается как
+     * уже проверенный во вспомогательном массиве; затем функция рекурсивно
+     * запускается для каждой из ещё не проверенных астр, имеющих указанный
+     * резонанс с исходной, результат каждого вызова добавляется к паттерну.
+     *
+     * @param astraIndex индекс исходной астры в списке астр этой Карты.
+     * @param harmonic   номер гармоники, по которому надо проверить узор.
+     * @param analyzed   вспомогательный массив, отмечающий, какие астры
+     *                   из списка астр этой Карты уже проверены на этот резонанс.
+     * @return паттерн, содержащий исходную астру и все связанные с ней
+     * по указанной гармонике астры из списка астр этой карты; паттерн,
+     * содержащий одну исходную астру, если резонансов по этой гармонике нет.
+     */
+    private Pattern gatherResonants(int astraIndex, int harmonic, boolean[] analyzed) {
+        Astra startingAstra = allAstras.get(astraIndex);
+        analyzed[astraIndex] = true;
+        Pattern currentPattern = new Pattern(harmonic, this);
+        currentPattern.addAstra(startingAstra);
+        getConnectedAstras(startingAstra, harmonic).stream()
+                .filter(a -> !analyzed[allAstras.indexOf(a)])
+                .map(a -> gatherResonants(allAstras.indexOf(a), harmonic, analyzed))
+                .forEach(currentPattern::addAllAstras);
+        return currentPattern;
+    }
+
+    /**
+     * Выдаёт список астр, находящихся в резонансе с данной по указанной гармонике.
+     *
+     * @param astra    астра, резонансы с которой ищутся.
+     * @param harmonic число, по которому определяется резонанс.
+     * @return список астр, находящих в резонансе с данной по указанной гармонике.
+     * Для космограммы просматриваются все остальные астры карты,
+     * для синастрии все астры второй карты.
+     */
+    public List<Astra> getConnectedAstras(Astra astra, int harmonic) {
+        return resonancesFor(astra)
+                .stream().filter(r -> r.hasHarmonicPattern(harmonic))
+                .map(r -> r.getCounterpart(astra))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Строит и выдаёт список, содержащий все возможные сочетания карт,
+     * между которыми простраиваются таблицы резонансов.
+     * @return если матрица строится для одиночной карты, выдаёт список
+     * из одной этой карты; если {@link #heavens} содержит {@code {А,Б}},
+     * выдаёт список {@code {А,Б,АБ}} и т.д.
+     */
+    public List<List<ChartObject>> evolveTables() {
+        List<List<ChartObject>> result = new ArrayList<>();
+
+        for (int i = 1; i < Math.pow(2, heavens.length); i++) {
+            List<ChartObject> nextCombination = new ArrayList<>();
+            int cypher = i;
+            int n = 0;
+            while (cypher > 0) {
+                if (cypher % 2 == 1)
+                    nextCombination.add(heavens[n]);
+                cypher /= 2;
+                n++;
+            }
+            result.add(nextCombination);
+        }
+        result.sort(Comparator.comparingInt(List::size));
+        return result;
+    }
+
+    public static void testVariants(String[] arg) {
+        List<String> results = new ArrayList<>();
+
+        for (int i = 1; i < Math.pow(2, arg.length); i++) {
+            StringBuilder currentVariant = new StringBuilder();
+            int c = i, n = 0;
+            while (c > 0) {
+                if (c % 2 == 1)
+                    currentVariant.append(arg[n]);
+                c /= 2;
+                n++;
+            }
+            results.add(currentVariant.toString());
+        }
+        results.sort(Comparator.comparingInt(String::length)
+//                .thenComparing(Comparator.naturalOrder())
+        );
+        results.forEach(System.out::println);
+    }
+
+    public static void main(String[] args) {
+        String[] charts = { "Ам", "Ян", "Тен", "§1" };
+        testVariants(charts);
+    }
+
 }

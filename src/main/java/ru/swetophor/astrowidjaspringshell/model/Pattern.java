@@ -1,7 +1,6 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
 import lombok.Getter;
-import ru.swetophor.astrowidjaspringshell.config.Settings;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,7 +31,7 @@ public class Pattern {
     /**
      * Сопоставление астр и суммы их зазоров с каждой другой астрой паттерна.
      */
-    private final Map<Astra, Double> elementsClearances = new HashMap<>();
+    private final Map<Astra, Double> elements = new HashMap<>();
     /**
      * Набор карт (одна или несколько), к которым (или которой) принадлежат астры паттерна.
      */
@@ -75,19 +74,19 @@ public class Pattern {
      * @param astra добавляемая к паттерну астра.
      */
     public void addAstra(Astra astra) {
-        for (Astra a : elementsClearances.keySet())
+        for (Astra a : elements.keySet())
             if (a.isTheSame(astra)) return;
         if (!heavens.contains(astra.getHeaven()))
             heavens.add(astra.getHeaven());
         double clearanceSum = 0.0;
-        for (Astra a : elementsClearances.keySet()) {
+        for (Astra a : elements.keySet()) {
             double clearance = getArcForHarmonic(astra, a, harmonic);
             clearanceSum += clearance;
-            elementsClearances.forEach((key, value) ->
-                    elementsClearances.put(key, value + clearance));
+            elements.forEach((key, value) ->
+                    elements.put(key, value + clearance));
             totalClearance += clearance;
         }
-        elementsClearances.put(astra, clearanceSum);
+        elements.put(astra, clearanceSum);
     }
 
     /**
@@ -98,7 +97,7 @@ public class Pattern {
      * @return список астр в паттерне, сортированный по возрастанию силы связанности.
      */
     public List<Astra> getAstrasByConnectivity() {
-        return elementsClearances.entrySet().stream()
+        return elements.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
                 .toList();
@@ -107,8 +106,8 @@ public class Pattern {
     /**
      * Выдаёт многострочное представление паттерна.
      * Первая строка докладывает среднюю силу связанности паттерна и кол-во астр.
-     * Каждая следующая строка содержит символ астры и (в скобках) среднюю
-     * силу её связанности с другими элементами паттерна.
+     * Каждая следующая строка (смещённая вправо табуляцией) содержит
+     * символ астры и (в скобках) среднюю силу её связанности с другими элементами паттерна.
      * Если паттерн включает астры из более чем одной карты, вслед
      * за именем и координатой астры отображается также краткое имя владельца.
      * Если паттерн содержит только одну астру (такой паттерн не считается
@@ -118,28 +117,17 @@ public class Pattern {
      * @return многостроку с представлением паттерна.
      */
     public String getConnectivityReport() {
-        return size() == 1 ?
-                "%s (-)%n"
-                        .formatted(getString()) :
-                "\t%.0f%% (%d):%n"
-                        .formatted(getAverageStrength(),
-                                size())
-                        +
-                        getAstrasByConnectivity().stream()
-                                .map(astra -> "\t\t%s%s (%.0f%%)%n"
-                                        .formatted(
-                                                astra.getSymbolWithDegree(),
-                                                getDimension() > 1 ?
-                                                        "<%s>".formatted(astra.getHeaven().getShortenedName(3)) :
-                                                        "",
-                                                calculateStrength(
-                                                        defineOrb(),
-                                                        elementsClearances.get(astra) / (size() - 1)
-                                                )
-                                        )
-                                )
-                                .collect(Collectors.joining());
+        return size() == 1 ? "%s (-)%n".formatted(getString()) :
+                "\t%.0f%% (%d):%n".formatted(getAverageStrength(), size())
+                +
+                getAstrasByConnectivity().stream()
+                    .map(astra -> "\t\t%s%s (%.0f%%)%n"
+                        .formatted(astra.getSymbolWithDegree(),
+                                getDimension() > 1 ? "<%s>".formatted(astra.getHeaven().getShortenedName(3)) : "",
+                                calculateStrength(defineOrb(), elements.get(astra) / (size() - 1))))
+                    .collect(Collectors.joining());
     }
+
     // TODO: сделать (скорее всего в МногоКарте или в Астро Матрице)
     //  умное сокращение названий карт
 
@@ -147,7 +135,7 @@ public class Pattern {
      * @return количество астр в паттерне.
      */
     public int size() {
-        return elementsClearances.size();
+        return elements.size();
     }
 
     /**
@@ -164,29 +152,36 @@ public class Pattern {
      * @return  {@code true}, если в паттерне нет ни одной астры. И наоборот.
      */
     public boolean isEmpty() {
-        return elementsClearances.isEmpty();
+        return elements.isEmpty();
     }
 
     /**
      * Добавляет к паттерну все астры из другого паттерна.
-     * (Сомнительно, нужен ли такой функционал).
      * @param pattern другой паттерн, астры из которого добавляются.
      */
     public void addAllAstras(Pattern pattern) {
-        pattern.getElementsClearances().keySet().forEach(this::addAstra);
+        pattern.getElements().keySet().forEach(this::addAstra);
     }
 
-
+    /**
+     * Сообщает среднюю силу аспектов между астрами паттерна.
+     * Если это моногармонический паттерн, предполагается, что между
+     * всеми астрами в нём равные или кратные аспекты с общим орбисом.
+     * Метод вычисляет среднюю силу всех аспектов между всеми астрами.
+     * @return условную силу паттерна от -100 до 100, согласно конвенции
+     * {@link ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics#calculateStrength(double, double) calculateStrength()}
+     */
     public double getAverageStrength() {
         return size() >= 2 ?
-                calculateStrength(defineOrb(), totalClearance / size()) :
+                calculateStrength(defineOrb(), totalClearance / possiblePairs()) :
                 0.0;
     }
 
     /**
      * Инструментальный метод, определяющий орб, используемый для
      * суждения о силе аспектов-резонансов.
-     * @return
+     * @return стандартный первичный орбис из настроек, ополовиненный
+     * в случае соответствующей настройки для двойных карт.
      */
     private double defineOrb() {
         return getDimension() > 1 && isHalfOrbsForDoubles() ?
@@ -217,7 +212,7 @@ public class Pattern {
      */
     public boolean isValid() {
 
-        List<Astra> astras = elementsClearances.keySet().stream().toList();
+        List<Astra> astras = elements.keySet().stream().toList();
 
         return IntStream.range(0, astras.size() - 1)
                 .anyMatch(i -> IntStream.range(i + 1, astras.size())
@@ -226,4 +221,12 @@ public class Pattern {
     }
 
     // TODO: сделать считалку паттернов для синастрии
+
+    private int possiblePairs() {
+        return size() * (size() - 1) / 2;
+    }
+
+    public String getHeavens() {
+        return heavens.stream().map(Chart::getName).collect(Collectors.joining(", "));
+    }
 }
