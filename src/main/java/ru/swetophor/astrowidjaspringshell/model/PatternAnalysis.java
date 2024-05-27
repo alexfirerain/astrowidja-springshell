@@ -1,56 +1,130 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
 import jakarta.validation.constraints.NotNull;
+import ru.swetophor.astrowidjaspringshell.config.Settings;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.IntStream;
+
+import static java.util.stream.Collectors.joining;
+import static ru.swetophor.astrowidjaspringshell.provider.Decorator.singularFrame;
 
 /**
  * Удобная обёртка для представления результатов гармонического анализа карты.
  */
 public class PatternAnalysis implements Iterable<Map.Entry<Integer, List<Pattern>>> {
-    private final Map<Integer, List<Pattern>> listMap;
+    private final SortedMap<Integer, List<Pattern>> listMap = new TreeMap<>();
 
-    public PatternAnalysis(Map<Integer, List<Pattern>> listMap) {
-        this.listMap = listMap;
+
+    /**
+     * Добавляет к Анализу паттерн, он добавляется к списку,
+     * сопоставленному номеру гармоники как ключу.
+     * Если паттернов по этой гармоники ещё не было,
+     * инициализируется новое сопоставление.
+     * @param pattern добавляемый паттерн астральных резонансов.
+     */
+    public void addPattern(Pattern pattern) {
+        int harmonic = pattern.getHarmonic();
+        listMap.putIfAbsent(harmonic, new ArrayList<>());
+        listMap.get(harmonic).add(pattern);
     }
 
-//    public PatternAnalysis(ChartObject chart, int ultimateHarmonic) {
-//        listMap = chart.buildPatternAnalysis(ultimateHarmonic);
-//    }
+    /**
+     * Возвращает список паттернов для указанной гармоники.
+     * Если по данной гармонике не фиксировано ни одного паттерна, возвращается пустой список.
+     *
+     * @param harmonic номер гармоники, для которой нужно получить паттерны.
+     * @return список паттернов, связанных с данной гармоникой, или пустой список, если таковых нет.
+     */
+    public List<Pattern> getPatternsFor(int harmonic) {
+        List<Pattern> patterns = listMap.get(harmonic);
+        return patterns == null ? new ArrayList<>() : patterns;
+    }
+
 
     public int size() {
         return listMap.size();
     }
 
-    public List<Pattern> getPatternsForHarmonic(int id) {
-        return listMap.get(id);
-    }
-
-    public Double getAverageStrengthForHarmonic(int id) {
-        List<Pattern> patterns = listMap.get(id);
+    /**
+     * Сообщает среднюю силу паттернов для указанной гармоники,
+     * рассчитанную как среднее арифметическое средней силы каждого паттерна
+     * с указанным резонансным числом для данного узор-разбора.
+     * @param harmonic по какой гармонике смотрим среднюю силу.
+     * @return  среднее значение для силы паттернов по этому резонансному
+     * числу, или 0, если таковых паттернов этой гармоники
+     * в данном узор-разборе не обнаружено.
+     */
+    public Double getAverageStrengthForHarmonic(int harmonic) {
+        List<Pattern> patterns = listMap.get(harmonic);
         return patterns == null || patterns.isEmpty() ?
-                null :
-                patterns.stream()
-                        .mapToDouble(Pattern::getAverageStrength)
-                        .sum() / patterns.size();
-    }
-    public Double getAverageStrengthForPattern(List<Pattern> patterns) {
-        return patterns == null || patterns.isEmpty() ?
-                null :
+                0.0 :
                 patterns.stream()
                         .mapToDouble(Pattern::getAverageStrength)
                         .sum() / patterns.size();
     }
 
-    public String getPatternRepresentation(List<Pattern> patterns) {
+    /**
+     * Сообщает, сколько всего астр связано в паттерны по указанной гармонике
+     * в данном узор-разборе.
+     * @param harmonic по какому резонансному числу хотим узнать.
+     * @return  количество астр во всех паттернах в данному анализе паттернов
+     * по указанному резонансному числу.
+     */
+    public int getAstrasQuantityFor(int harmonic) {
+        List<Pattern> patterns = listMap.get(harmonic);
         return patterns == null || patterns.isEmpty() ?
-                null :
+                0 :
                 patterns.stream()
-                        .map(Pattern::getConnectivityReport)
-                        .collect(Collectors.joining());
+                        .mapToInt(Pattern::size)
+                        .sum();
+    }
+
+    /**
+     * Выдаёт многостроку, составленную из суммы описаний паттернов,
+     * как те предоставляются {@link Pattern#getConnectivityReport()}.
+     * В начале выводится заголовок в рамке, сообщающий, по какой гармонике
+     * это паттерны, сколько в них в общей сложности астр, и какова
+     * средняя сила этих паттернов.
+     * Если ни одного паттерна по указанной гармонике в данном анализе
+     * не найдено, выдаёт рамку с сообщением об этом.
+     * @param harmonic по какой гармонике запрашиваем статистику.
+     * @return  готовое для текстового вывода представление паттернов
+     *  данного разбора узоров для указанного резонансного числа.
+     */
+    public String getPatternRepresentation(int harmonic) {
+        List<Pattern> patterns = listMap.get(harmonic);
+        if (patterns == null || patterns.isEmpty())
+            return singularFrame("Ни одного паттерна на резонансном числе " + harmonic);
+        else
+            return patterns.stream()
+                .map(pattern -> "\t\t%s_______\n"
+                        .formatted(pattern.getConnectivityReport()))
+                .collect(joining(
+                        "_______\n",
+                        singularFrame(
+                                    """
+                                        Паттерны по числу %d%n
+                                            <всего планет %d, средняя сила %.0f%%>
+                                    """.formatted(harmonic,
+                                                getAstrasQuantityFor(harmonic),
+                                                getAverageStrengthForHarmonic(harmonic))
+                        ),
+                        "_______\n\n"));
+    }
+
+    /**
+     * Выдаёт многостроку, рассказывающую обо всех паттернах этого сбора узоров.
+     * Состоит из последовательно соединённых описаний паттернов по каждой
+     * гармонике от 1 до {@link Settings#getEdgeHarmonic}, как то предоставляется
+     * {@link #getPatternRepresentation}
+     * @return описание паттернов по всем анализируемым гармоникам этой
+     * карты или сочетания карт.
+     */
+    public String getAnalysisRepresentation() {
+        return IntStream.rangeClosed(1, Settings.getEdgeHarmonic())
+                .mapToObj(this::getPatternRepresentation)
+                .collect(joining());
     }
 
     /**
@@ -59,21 +133,12 @@ public class PatternAnalysis implements Iterable<Map.Entry<Integer, List<Pattern
      * @return an Iterator.
      */
     @SuppressWarnings("NullableProblems")
-    @NotNull
     @Override
+    @NotNull
     public Iterator<Map.Entry<Integer, List<Pattern>>> iterator() {
         return listMap.entrySet().iterator();
     }
 
-//    public String[] getReportFor(int i) {
-//        String[] data = new String[5];
-//        data[0] = String.valueOf(i);
-////        data[1] = ;
-////        data[2] = ;
-////        data[3] = ;
-////        data[4] = ;
-//
-//        return data;
-//    }
+
 
 }

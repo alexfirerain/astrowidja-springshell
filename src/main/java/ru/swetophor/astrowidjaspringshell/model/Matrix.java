@@ -35,7 +35,7 @@ public class Matrix {
     /**
      * Двумерный массив резонансов между астрами.
      */
-    protected Resonance[][] resonances;
+    protected ResonanceBatch[][] resonanceBatches;
     /**
      * Крайняя гармоника, до которой рассматриваются резонансы.
      */
@@ -50,10 +50,10 @@ public class Matrix {
     protected MatrixType type;
 
     public boolean resonancePresent(Astra a, Astra b, int harmonic) {
-        Resonance resonance = findResonance(a, b);
-        if (resonance == null)
+        ResonanceBatch resonanceBatch = findResonance(a, b);
+        if (resonanceBatch == null)
             throw new IllegalArgumentException("резонанс не найден");
-        return resonance.hasGivenHarmonic(harmonic);
+        return resonanceBatch.hasGivenHarmonic(harmonic);
     }
 
 
@@ -70,12 +70,12 @@ public class Matrix {
             case SYNASTRY -> {                             // таблица всех астр одной на все астры другой
                 for (int x = 0; x < datum1.length; x++)
                     for (int y = 0; y < datum2.length; y++)
-                        sb.append(resonances[x][y].resonancesOutput()).append("\n");
+                        sb.append(resonanceBatches[x][y].resonancesOutput()).append("\n");
             }
             case COSMOGRAM -> {                            // полутаблица астр карты между собой
                 for (int i = 0; i < datum1.length; i++)
                     for (int j = i + 1; j < datum2.length; j++)
-                        sb.append(resonances[i][j].resonancesOutput()).append("\n");
+                        sb.append(resonanceBatches[i][j].resonancesOutput()).append("\n");
             }
         }
         return sb.toString();
@@ -101,10 +101,10 @@ public class Matrix {
 
         this.edgeHarmonic = edgeHarmonic;
 
-        resonances = new Resonance[astras_1.size()][astras_2.size()];
+        resonanceBatches = new ResonanceBatch[astras_1.size()][astras_2.size()];
         for (int i = 0; i < datum1.length; i++)
             for (int j = 0; j < datum2.length; j++)
-                resonances[i][j] = new Resonance(datum1[i],
+                resonanceBatches[i][j] = new ResonanceBatch(datum1[i],
                         datum2[j],
                         CIRCLE / this.orbsDivider,
                         this.edgeHarmonic);
@@ -135,13 +135,13 @@ public class Matrix {
      * для синастрии резонанс каждой астры первой карты с каждой астрой второй.
      * @return список всех резонансов в том же порядке, как при выдаче описания.
      */
-    public List<Resonance> getAllResonances() {
-        List<Resonance> content = new ArrayList<>();
+    public List<ResonanceBatch> getAllResonances() {
+        List<ResonanceBatch> content = new ArrayList<>();
         switch (type) {
             case SYNASTRY ->
                 // таблица всех астр одной на все астры другой
                 content = IntStream.range(0, datum1.length)
-                            .mapToObj(x -> Arrays.asList(resonances[x])
+                            .mapToObj(x -> Arrays.asList(resonanceBatches[x])
                                 .subList(0, datum2.length))
                             .flatMap(Collection::stream)
                             .collect(Collectors.toList());
@@ -149,7 +149,7 @@ public class Matrix {
                 // полутаблица астр карты между собой
                 for (int i = 0; i < datum1.length; i++)
                     content.addAll(Arrays.asList(
-                            resonances[i]).subList(i + 1, datum2.length));
+                            resonanceBatches[i]).subList(i + 1, datum2.length));
             }
         }
         return content;
@@ -165,10 +165,10 @@ public class Matrix {
      * @return список резонансов, которые имеет астра с указанным номером,
      * {@code null}, если индекс за пределами массива астр первой карты.
      */
-    public List<Resonance> getResonancesFor(int astraOrdinal) {
+    public List<ResonanceBatch> getResonancesFor(int astraOrdinal) {
         if (astraOrdinal < 0 || astraOrdinal >= datum1.length)
             return null;
-        return Arrays.stream(resonances[astraOrdinal])
+        return Arrays.stream(resonanceBatches[astraOrdinal])
                 .collect(Collectors.toList());
     }
 
@@ -182,10 +182,10 @@ public class Matrix {
      * @return список резонансов, которые имеет астра с указанным номером
      * из второй карты.
      */
-    public List<Resonance> getResonancesOfBackChartFor(int astraOrdinal) {
+    public List<ResonanceBatch> getResonancesOfBackChartFor(int astraOrdinal) {
         if (astraOrdinal < 0 || astraOrdinal >= datum2.length)
             return null;
-        return Arrays.stream(resonances)
+        return Arrays.stream(resonanceBatches)
                 .map(row -> row[astraOrdinal])
                 .collect(Collectors.toList());
     }
@@ -197,7 +197,7 @@ public class Matrix {
      * @param astraName имя астры (в случае синастрии имеется в виду первая карта).
      * @return список резонансов, которые имеет астра с указанным именем.
      */
-    public List<Resonance> getResonancesFor(String astraName) {
+    public List<ResonanceBatch> getResonancesFor(String astraName) {
         for (int i = 0; i < datum1.length; i++)
             if (datum1[i].getName().equals(astraName))
                 return getResonancesFor(i);
@@ -210,7 +210,7 @@ public class Matrix {
      * @param astra астра (из любой карты).
      * @return список резонансов, которые имеет указанная астра.
      */
-    public List<Resonance> getResonancesFor(Astra astra) {
+    public List<ResonanceBatch> getResonancesFor(Astra astra) {
 //        if (datum1.length == 0)
 //            throw new IllegalStateException("Матрица пуста.");
 
@@ -245,7 +245,7 @@ public class Matrix {
      * @param astraName имя астры из второй карты.
      * @return список резонансов, которые имеет указанная астра из второй карты.
      */
-    public List<Resonance> getResonancesOfBackChartFor(String astraName) {
+    public List<ResonanceBatch> getResonancesOfBackChartFor(String astraName) {
         for (int i = 0; i < datum2.length; i++)
             if (datum2[i].getName().equals(astraName))
                 return getResonancesOfBackChartFor(i);
@@ -264,7 +264,7 @@ public class Matrix {
     public List<Astra> getConnectedAstras(Astra astra, int harmonic) {
         return getResonancesFor(astra)
                 .stream().filter(r -> r.hasHarmonicPattern(harmonic))
-                .map(resonance -> resonance.getCounterpart(astra))
+                .map(resonanceBatch -> resonanceBatch.getCounterpart(astra))
                 .collect(Collectors.toList());
     }
 
@@ -279,7 +279,7 @@ public class Matrix {
      * между ними имеется явное взаимодействие по указанной гармонике.
      */
     public boolean astrasInResonance(Astra a, Astra b, int harmonic) {
-        Resonance crossing = findResonance(a, b);
+        ResonanceBatch crossing = findResonance(a, b);
         if (crossing == null)
             return false;
         return crossing.hasGivenHarmonic(harmonic);
@@ -296,7 +296,7 @@ public class Matrix {
      * если хотя бы одна из астр пуста или не содержится в матрице,
      * или в обоих параметрах указана идентичная астра, то {@code null}.
      */
-    public Resonance findResonance(Astra a, Astra b) {
+    public ResonanceBatch findResonance(Astra a, Astra b) {
         if (a == null || b == null || a.equals(b))
             return null;
 
@@ -325,8 +325,8 @@ public class Matrix {
         if (y == -1) return null;
 
         return reversed ?
-                resonances[y][x] :
-                resonances[x][y];
+                resonanceBatches[y][x] :
+                resonanceBatches[x][y];
     }
 
 }

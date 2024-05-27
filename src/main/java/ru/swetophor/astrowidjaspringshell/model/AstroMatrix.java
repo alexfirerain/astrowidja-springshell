@@ -1,5 +1,8 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
+import lombok.Getter;
+import ru.swetophor.astrowidjaspringshell.config.Settings;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -7,6 +10,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.IntStream.range;
 
+@Getter
 public class AstroMatrix {
     /**
      * Карты, на основе которых рассчитана Матрица,
@@ -29,7 +33,7 @@ public class AstroMatrix {
      * между всеми астрами Матрицы. Если общее количество астр N,
      * то длина первого ряда равна N - 1, каждого последующего — на один меньше.
      */
-    private final Resonance[][] matrix;
+    private final ResonanceBatch[][] matrix;
 
     /**
      * Создание матрицы резонансов для некоторого количества
@@ -50,16 +54,15 @@ public class AstroMatrix {
         int counter = 0;
         for (Chart chart : heavens) {
             index.put(chart, new HashMap<>());
-            var astraMap = index.get(chart);
             for (Astra astra : chart.getAstras())
-                astraMap.put(astra, counter++);
+                index.get(chart).put(astra, counter++);
         }
 
         // построение матрицы резонансов
-        matrix = new Resonance[allAstras.size()][allAstras.size()];
+        matrix = new ResonanceBatch[allAstras.size()][allAstras.size()];
         for (int i = 0; i < allAstras.size() - 1; i++)
             for (int j = i + 1; j < allAstras.size(); j++)
-                matrix[i][j] = new Resonance(allAstras.get(i), allAstras.get(j));
+                matrix[i][j] = new ResonanceBatch(allAstras.get(i), allAstras.get(j));
     }
 
     /**
@@ -85,7 +88,7 @@ public class AstroMatrix {
      * @param b вторая астра резонанса.
      * @return  объект резонанса, рассчитанный в Матрице для двух указанных астр.
      */
-    public Resonance getResonanceFor(Astra a, Astra b) {
+    public ResonanceBatch getResonanceFor(Astra a, Astra b) {
         if (a == b) throw new IllegalArgumentException("Астра не делает резонанса сама с собой");
         int iA = astraIndex(a), iB = astraIndex(b);
         if (iA == -1 || iB == -1) throw new IllegalArgumentException("Астра %s не найдена"
@@ -102,7 +105,7 @@ public class AstroMatrix {
     /**
      * Сообщает, что между этими астрами присутствует
      * номинальный резонанс по указанной гармонике, как это сообщается
-     * {@link Resonance#hasGivenHarmonic(int) hasGivenHarmonic()}.
+     * {@link ResonanceBatch#hasGivenHarmonic(int) hasGivenHarmonic()}.
      * @param a первая проверяемая астра.
      * @param b вторая проверяемая астра.
      * @param harmonic  гармоника, явная связь по которой проверяется.
@@ -114,13 +117,13 @@ public class AstroMatrix {
     }
 
     /**
-     * Выдаёт список {@link Resonance Резонансов}, которые указанная астра
+     * Выдаёт список {@link ResonanceBatch Резонансов}, которые указанная астра
      * делает со всеми остальными астрами в Матрице (из одной или разных карт).
      * @param a астра, резонансы которой интересуют.
      * @return  список резонансов указанной астры с каждой из остальных астр Матрицы.
      */
-    public List<Resonance> resonancesFor(Astra a) {
-        List<Resonance> list = new ArrayList<>();
+    public List<ResonanceBatch> resonancesFor(Astra a) {
+        List<ResonanceBatch> list = new ArrayList<>();
         int index = astraIndex(a);
         int i = 0, j = index;
         boolean turning = false;
@@ -142,37 +145,37 @@ public class AstroMatrix {
      * Т.е. по резонансу для всех возможных пар между астрами анализируемой карты или карт.
      * @return  поток объектов-резонансов, начиная с первой планеты первой карты.
      */
-    public Stream<Resonance> stream() {
+    public Stream<ResonanceBatch> stream() {
         return IntStream.range(0, allAstras.size() - 1)
                 .mapToObj(i -> Arrays.asList(matrix[i])
                         .subList(i + 1, allAstras.size()))
                 .flatMap(Collection::stream);
     }
 
-    public List<Resonance> getAllResonances() {
+    public List<ResonanceBatch> getAllResonances() {
         return stream().collect(Collectors.toCollection(ArrayList::new));
     }
 
-    public List<Resonance> getResonancesFor(Chart chart) {
+    public List<ResonanceBatch> getResonancesFor(Chart chart) {
         return stream()
-                .filter(Resonance::isNonSynastric)
+                .filter(ResonanceBatch::isNonSynastric)
                 .filter(r -> r.getHeavens().contains(chart))
                 .toList();
     }
 
-    public List<Resonance> getResonancesFor(Chart chart1, Chart chart2) {
+    public List<ResonanceBatch> getResonancesFor(Chart chart1, Chart chart2) {
         return stream()
-                .filter(Resonance::isSynastric)
+                .filter(ResonanceBatch::isSynastric)
                 .filter(r -> r.getHeavens().containsAll(Set.of(chart1, chart2)))
                 .toList();
     }
 
     /**
      * Находит и возвращает список всех паттернов, образованных астрами
-     * данной карты по указанной гармонике.
+     * данной карты или карт по указанной гармонике.
      *
      * @param harmonic гармоника, по которой выделяются паттерны.
-     * @return список паттернов из астр этой карты, резонирующих
+     * @return список паттернов из астр этой карты или карт, резонирующих
      * по указанной гармонике, сортированный по средней силе.
      * Если ни одного паттерна не обнаруживается, то пустой список.
      */
@@ -216,12 +219,14 @@ public class AstroMatrix {
 
     /**
      * Выдаёт список астр, находящихся в резонансе с данной по указанной гармонике.
+     * Рассматриваются все астры из всех карт, по которым построена Матрица:
+     * остальные астры той же карты и каждая астра из всех остальных карт.
      *
      * @param astra    астра, резонансы с которой ищутся.
      * @param harmonic число, по которому определяется резонанс.
      * @return список астр, находящих в резонансе с данной по указанной гармонике.
-     * Для космограммы просматриваются все остальные астры карты,
-     * для синастрии все астры второй карты.
+     * Орбис для аспектов между астрами из разных карт учитывается соответственно
+     * глобально определённым правилам.
      */
     public List<Astra> getConnectedAstras(Astra astra, int harmonic) {
         return resonancesFor(astra)
@@ -233,52 +238,51 @@ public class AstroMatrix {
     /**
      * Строит и выдаёт список, содержащий все возможные сочетания карт,
      * между которыми простраиваются таблицы резонансов.
+     * Если флажок {@code forAspects} установлен, передаются комбинации только
+     * из одной или двух карт, если нет, то все комбинации вплоть до
+     * варианта, включающего все карты сразу.
+     * Сокращённый список будет иметь длину {@code N*(N+1)/2}, полный — {@code 2^N-1}.
+     * @param forAspects ограничивать ли список только сочетанием одной-двух карт,
+     *                   как требуется для передачи аспектов.
      * @return если матрица строится для одиночной карты, выдаёт список
      * из одной этой карты; если {@link #heavens} содержит {@code {А,Б}},
-     * выдаёт список {@code {А,Б,АБ}} и т.д.
+     * выдаёт список {@code {А,Б,АБ}} и т.д. Для списка {@code {А,Б,В}} вариант
+     * для аспектов выдаст {@code {А,Б,В,АБ,АВ,БВ}}, вариант для паттернов —
+     * {@code {А,Б,В,АБ,АВ,БВ,АБВ}} и т.д.
      */
-    public List<List<ChartObject>> evolveTables() {
-        List<List<ChartObject>> result = new ArrayList<>();
+    public List<List<Chart>> heavenCombinations(boolean forAspects) {
+        List<List<Chart>> combinations = new ArrayList<>();
 
         for (int i = 1; i < Math.pow(2, heavens.length); i++) {
-            List<ChartObject> nextCombination = new ArrayList<>();
+            List<Chart> nextCombination = new ArrayList<>();
             int cypher = i;
             int n = 0;
             while (cypher > 0) {
-                if (cypher % 2 == 1)
+                if ((cypher % 2 == 1) &&
+                        (!forAspects || nextCombination.size() < 2))
                     nextCombination.add(heavens[n]);
                 cypher /= 2;
                 n++;
             }
-            result.add(nextCombination);
+            combinations.add(nextCombination);
         }
-        result.sort(Comparator.comparingInt(List::size));
-        return result;
+        combinations.sort(Comparator.comparingInt(List::size));
+        return combinations;
     }
 
-    public static void testVariants(String[] arg) {
-        List<String> results = new ArrayList<>();
-
-        for (int i = 1; i < Math.pow(2, arg.length); i++) {
-            StringBuilder currentVariant = new StringBuilder();
-            int c = i, n = 0;
-            while (c > 0) {
-                if (c % 2 == 1)
-                    currentVariant.append(arg[n]);
-                c /= 2;
-                n++;
-            }
-            results.add(currentVariant.toString());
-        }
-        results.sort(Comparator.comparingInt(String::length)
-//                .thenComparing(Comparator.naturalOrder())
-        );
-        results.forEach(System.out::println);
+    /**
+     * Выдаёт полный гармонический анализ резонансов по карте
+     * или картам, соответствующим этой АстроМатрице.
+     * @return {@link PatternTable},аккуратно описывающий все
+     * паттерны резонансов, найденные по этой Матрице.
+     */
+    public PatternTable buildPatternTable() {
+        return new PatternTable(this);
     }
 
-    public static void main(String[] args) {
-        String[] charts = { "Ам", "Ян", "Тен", "§1" };
-        testVariants(charts);
+    public AspectTable buildAspectTable() {
+        return new AspectTable(this);
     }
+
 
 }

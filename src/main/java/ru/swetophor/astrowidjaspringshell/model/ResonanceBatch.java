@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import ru.swetophor.astrowidjaspringshell.config.Settings;
 import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
+import ru.swetophor.astrowidjaspringshell.provider.Interpreter;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,7 +24,7 @@ import static ru.swetophor.astrowidjaspringshell.provider.Interpreter.ResonanceD
  */
 @Setter
 @Getter
-public class Resonance {
+public class ResonanceBatch {
     /**
      * Первая астра.
      */
@@ -50,7 +51,13 @@ public class Resonance {
      */
     private List<Aspect> aspects = new ArrayList<>();
 
-    private Set<Chart> heavens = new HashSet<>(2);
+    /**
+     * Набор ссылок на карты, к которым принадлежат астры,
+     * формирующие этот пучок резонансов.
+     * Если это астры одного неба, набор содержит один элемент,
+     * если же разных небес, то два элемента.
+     */
+    private Set<Chart> heavens = HashSet.newHashSet(2);
 
     /**
      * Получение массива аспектов для дуги между двумя астрами (конструктор)
@@ -63,7 +70,7 @@ public class Resonance {
      *                               на основании глобальной настройки {@link Settings#isHalfOrbsForDoubles()}.
      * @param ultimateHarmonic до какой гармоники продолжать анализ.
      */
-    Resonance(Astra a, Astra b, double primalOrb, int ultimateHarmonic) {
+    ResonanceBatch(Astra a, Astra b, double primalOrb, int ultimateHarmonic) {
         if (a == b)
             throw new IllegalArgumentException("Одна и та же астра не делает резонанса сама с собой");
         astra_1 = a;
@@ -91,7 +98,7 @@ public class Resonance {
      * @param a первая астра резонанса.
      * @param b вторая астра резонанса.
      */
-    Resonance(Astra a, Astra b) {
+    ResonanceBatch(Astra a, Astra b) {
         this(a, b, Settings.getPrimalOrb(), Settings.getEdgeHarmonic());
     }
 
@@ -125,20 +132,35 @@ public class Resonance {
         return true;
     }
 
+    /**
+     * Является ли этот аспект аспектом между астрами двух небес.
+     * @return  {@code ДА}, если аспект между двумя картами.
+     */
     public boolean isSynastric() {
         return heavens.size() == 2;
     }
 
+    /**
+     * Является ли этот аспект аспектом между астрами одного неба.
+     * @return  {@code ДА}, если аспект внутри одной карты.
+     */
     public boolean isNonSynastric() {
         return heavens.size() == 1;
     }
 
-    private String resoundsInfo() {
+    /**
+     * Выдаёт многостроку, в каждой обозначение аспекта (модифицированное
+     * {@link Interpreter}) и описание, предоставляемое аспектным {@link Aspect#toString toString()}.
+     * Если в пучке резонансов при данных настройках не распознано
+     * ни одного аспекта — строку, сообщающую об этом.
+     * @return  текстовое описание этого пучка резонансов.
+     */
+    private String aspectsInfo() {
         StringBuilder sb = new StringBuilder();
 
-        if (aspects.isEmpty()) {
+        if (aspects.isEmpty())
             sb.append("Ни одного резонанса до %d при орбисе %s%n".formatted(ultimateHarmonic, orb));
-        }
+
         for (Aspect aspect : getAspectsByStrength()) {
             sb.append(ResonanceDescription(aspect.getNumeric(), aspect.getMultiplicity()));
             sb.append(aspect);
@@ -146,31 +168,48 @@ public class Resonance {
         return sb.toString();
     }
 
+    /**
+     * Описательная многострока, объединяющая вывод заголовка
+     * и отчёта по аспектам.
+     * @return  полное стандартное представление пучка резонансов.
+     */
     public String resonancesOutput() {
         return getTitle() +
-                resoundsReport();
+                aspectsReport();
     }
 
+    /**
+     * Выдаёт список распознанных в этом пучке аспектов,
+     * сортированный по убыванию силы (или росту зазора).
+     * @return  список {@link Aspect аспектов}.
+     */
     private List<Aspect> getAspectsByStrength() {
         return aspects.stream()
                 .sorted(Comparator.comparing(Aspect::getStrength).reversed())
                 .collect(Collectors.toList());
     }
 
-
-    public String resoundsReport() {
+    /**
+     * Выдаёт текстовое описание резонансов (аспектов), описанных для этой дуги.
+     * @return многострочник, где каждая строка характеризует аспект (резонансное
+     * число и множитель) и его силу (в нескольких возможных представлениях).
+     * Если резонанс пуст, то строку с сообщением об этом.
+     */
+    public String aspectsReport() {
         StringBuilder sb = new StringBuilder();
 
         if (aspects.isEmpty())
             sb.append("Ни одного резонанса до %d при орбисе %s%n".formatted(ultimateHarmonic, orb));
-        getAspectsByStrength().forEach(aspect -> {
-            sb.append(ResonanceDescription(aspect.getNumeric(), aspect.getMultiplicity()));
-            sb.append("Резонанс %d/%d %s (%.0f%%) --- %.2f %n".formatted(
-                    aspect.getMultiplicity(),
-                    aspect.getNumeric(),
-                    aspect.strengthRating(),
-                    aspect.getStrength(),
-                    aspect.getStrength() / Math.pow(Math.log(aspect.getNumeric() + 1.0), 0.5)));
+        aspects.stream()
+                .sorted(Comparator.comparing(Aspect::getStrength).reversed())
+                .forEach(aspect -> {
+                    sb.append(ResonanceDescription(aspect.getNumeric(), aspect.getMultiplicity()));
+                    sb.append("Резонанс %d/%d %s (%.0f%%) --- %.2f %n".formatted(
+                            aspect.getMultiplicity(),
+                            aspect.getNumeric(),
+                            aspect.strengthRating(),
+                            aspect.getStrength(),
+                            aspect.getStrength() / Math.pow(Math.log(aspect.getNumeric() + 1.0), 0.5)));
         });
         return sb.toString();
     }
