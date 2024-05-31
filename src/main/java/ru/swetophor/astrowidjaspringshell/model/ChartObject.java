@@ -2,26 +2,20 @@ package ru.swetophor.astrowidjaspringshell.model;
 
 import lombok.Getter;
 import lombok.Setter;
+import ru.swetophor.astrowidjaspringshell.utils.Decorator;
 
 @Getter
 @Setter
 public abstract class ChartObject {
-//    protected ChartType type;
     protected String name;
-//    protected AstroMatrix matrix;
 
     public ChartObject(String name) {
         this.name = name;
-//        matrix = new AstroMatrix(getData());
     }
 
     public abstract Chart[] getData();
 
     public abstract int getDimension();
-
-    // этот функционал видимо выносится в AstroMatrix,
-    // иже отделяется от карты (которая теперь просто набор астр)
-    public abstract boolean resonancePresent(Astra a, Astra b, int harmonic);
 
     /**
      * Выдаёт имя карты. Если оно длиннее указанного предела,
@@ -36,4 +30,31 @@ public abstract class ChartObject {
                 name :
                 name.substring(0, limit - 1) + "…";
     }
+
+    /**
+     * Возвращает строку того формата, который принят для хранения
+     * данных карты астры при сохранении.
+     * В первой строке содержит "#" + имя карты.
+     * В каждой последующей строке – положение очередной астры, как оно
+     * предоставляется функцией {@link Astra#getString()}.
+     * В конце также добавляется пустая строка для разделения.
+     *
+     * @return многостроку с названием карты и положением астр.
+     */
+    public abstract String getString();
+
+    /**
+     * Выдаёт заголовок.
+     *
+     * @return имя объекта карты в рамке.
+     */
+    public String getCaption() {
+        return Decorator.frameText(name, 30, '*');
+    }
+
+    /**
+     * Выдаёт список астр в этой карте или многокарте.
+     * @return строку с готовым для отображения списком астр.
+     */
+    public abstract String getAstrasList();
 }

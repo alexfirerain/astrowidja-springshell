@@ -1,6 +1,7 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
-import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class MultiChart extends ChartObject {
 
@@ -11,14 +12,42 @@ public class MultiChart extends ChartObject {
         this.moments = moments;
     }
 
+    public MultiChart(String name, ChartObject... charts) {
+        this(name, Arrays.stream(charts)
+                .map(ChartObject::getData)
+                .flatMap(Arrays::stream)
+                .toArray(Chart[]::new));
+    }
+
+    public MultiChart(ChartObject... charts) {
+        this("", charts);
+        String autoTitle = Arrays.stream(moments)
+                .map(Chart::getName)
+                .collect(Collectors.joining(" + ", "Синастрия: ", ""));
+        setName(autoTitle);
+    }
+
     @Override
     public Chart[] getData() {
         return moments;
     }
 
     @Override
-    public boolean resonancePresent(Astra a, Astra b, int harmonic) {
-        return false;
+    public String getString() {
+        return Arrays.stream(moments)
+                .map(Chart::getString)
+                .collect(Collectors.joining("",
+                        "//%s:".formatted(name),
+                        ""));
+    }
+
+    @Override
+    public String getAstrasList() {
+        return Arrays.stream(moments)
+                .map(Chart::getAstrasList)
+                .collect(Collectors.joining("",
+                        "//%s%n:".formatted(name),
+                        ""));
     }
 
     @Override

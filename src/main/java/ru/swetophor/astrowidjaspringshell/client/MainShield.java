@@ -8,7 +8,7 @@ import ru.swetophor.astrowidjaspringshell.provider.ProgramState;
 
 import static ru.swetophor.astrowidjaspringshell.provider.ProgramState.MAIN;
 
-@Component
+//@Component
 @Getter
 @Setter
 public class MainShield {

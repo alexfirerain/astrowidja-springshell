@@ -1,17 +1,15 @@
-package ru.swetophor.astrowidjaspringshell.provider;
+package ru.swetophor.astrowidjaspringshell.utils;
 
-import ru.swetophor.astrowidjaspringshell.model.Astra;
-import ru.swetophor.astrowidjaspringshell.model.AstraEntity;
-import ru.swetophor.astrowidjaspringshell.model.Chart;
-import ru.swetophor.astrowidjaspringshell.model.Harmonics;
+import ru.swetophor.astrowidjaspringshell.client.CommandLineController;
+import ru.swetophor.astrowidjaspringshell.model.*;
 
 import java.util.stream.Collectors;
 
 import static java.lang.Math.abs;
 import static java.lang.String.format;
-import static ru.swetophor.astrowidjaspringshell.model.AstraEntity.*;
-import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.*;
+import static ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics.*;
 import static ru.swetophor.astrowidjaspringshell.model.ZodiacSign.zodiumIcon;
+import static ru.swetophor.astrowidjaspringshell.utils.Decorator.print;
 
 /**
  * Инструментальный класс для решения
@@ -220,5 +218,61 @@ public class Mechanics {
         if (!filename.endsWith(".awb") && !filename.endsWith(".awc"))
             filename += asAwc ? ".awc" : ".awb";
         return filename;
+    }
+
+    /**
+     * Разрешает коллизию, возникающую, если имя добавляемой карты уже содержится
+     * в списке. Запрашивает решение у астролога, требуя выбора одного из трёх вариантов:
+     * <li>переименовать – запрашивает новое имя для добавляемой карты и добавляет обновлённую;</li>
+     * <li>обновить – ставит новую карту на место старой карты с этим именем;</li>
+     * <li>заменить – удаляет из списка карту с конфликтным именем, добавляет новую;</li>
+     * <li>отмена – карта не добавляется.</li>
+     *
+     * @param controversial добавляемая карта, имя которой, как предварительно уже определено,
+     *                      уже присутствует в этом списке.
+     * @param listName      название файла или иного списка, в который добавляется карта, в предложном падеже.
+     * @return {@code да}, если добавление карты (с переименованием либо с заменой) состоялось,
+     *          {@code нет}, если была выбрана отмена.
+     */
+    public static boolean resolveCollision(ChartList list, ChartObject controversial, String listName) {
+        while (true) {
+            print("""
+                                                   \s
+                            Карта с именем '%s' уже есть %s:
+                            1. добавить под новым именем
+                            2. заменить присутствующую в списке
+                            3. удалить старую, добавить новую в конец списка
+                            0. отмена
+                           \s"""
+                    .formatted(controversial.getName(),
+                    listName.startsWith("на ") ?
+                            listName :
+                            "в " + listName));
+
+            switch (CommandLineController.KEYBOARD.nextLine()) {
+                case "1", "name" -> {
+                    String rename;
+                    do {
+                        System.out.print("Новое имя: ");
+                        rename = CommandLineController.KEYBOARD.nextLine();         // TODO: допустимое имя
+                        System.out.println();
+                    } while (list.contains(rename));
+                    controversial.setName(rename);
+                    return list.addItem(controversial);
+                }
+                case "2", "replace" -> {
+                    list.setItem(list.indexOf(controversial.getName()), controversial);
+                    return true;
+                }
+                case "3", "add" -> {
+                    list.remove(controversial.getName());
+                    return list.addItem(controversial);
+                }
+                case "0", "cancel" -> {
+                    System.out.println("Отмена добавления карты: " + controversial.getName());
+                    return false;
+                }
+            }
+        }
     }
 }

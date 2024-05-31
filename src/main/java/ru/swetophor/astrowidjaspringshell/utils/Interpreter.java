@@ -1,4 +1,4 @@
-package ru.swetophor.astrowidjaspringshell.provider;
+package ru.swetophor.astrowidjaspringshell.utils;
 
 import ru.swetophor.astrowidjaspringshell.model.Harmonics;
 

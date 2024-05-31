@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.CIRCLE;
+import static ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics.CIRCLE;
 import static ru.swetophor.astrowidjaspringshell.model.MatrixType.COSMOGRAM;
 import static ru.swetophor.astrowidjaspringshell.model.MatrixType.SYNASTRY;
 

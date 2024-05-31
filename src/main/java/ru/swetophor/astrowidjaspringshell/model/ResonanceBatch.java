@@ -3,17 +3,17 @@ package ru.swetophor.astrowidjaspringshell.model;
 import lombok.Getter;
 import lombok.Setter;
 import ru.swetophor.astrowidjaspringshell.config.Settings;
-import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
-import ru.swetophor.astrowidjaspringshell.provider.Interpreter;
+import ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics;
+import ru.swetophor.astrowidjaspringshell.utils.Interpreter;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.getArcForHarmonic;
+import static ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics.getArcForHarmonic;
 import static ru.swetophor.astrowidjaspringshell.model.Harmonics.findMultiplier;
-import static ru.swetophor.astrowidjaspringshell.provider.Mechanics.secondFormat;
-import static ru.swetophor.astrowidjaspringshell.provider.Interpreter.ResonanceDescription;
+import static ru.swetophor.astrowidjaspringshell.utils.Mechanics.secondFormat;
+import static ru.swetophor.astrowidjaspringshell.utils.Interpreter.ResonanceDescription;
 
 /**
  * Гармонический анализ взаимодействия некоторых двух астр.

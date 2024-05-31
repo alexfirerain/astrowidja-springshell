@@ -1,7 +1,7 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
 import lombok.Getter;
-import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
+import ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.lang.Math.abs;
-import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.normalizeArc;
+import static ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics.normalizeArc;
 
 @Getter
 public final class Harmonics extends Number implements Comparable<Harmonics> {

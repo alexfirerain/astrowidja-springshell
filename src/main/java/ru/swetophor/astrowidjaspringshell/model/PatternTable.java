@@ -1,7 +1,7 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
 import ru.swetophor.astrowidjaspringshell.config.Settings;
-import ru.swetophor.astrowidjaspringshell.provider.Decorator;
+import ru.swetophor.astrowidjaspringshell.utils.Decorator;
 
 import java.util.*;
 import java.util.stream.IntStream;
@@ -65,24 +65,34 @@ public class PatternTable {
     }
 
     /**
-     * Выдаёт полную текстовую репрезентацию найденных гармонических паттернов для
+     * Выдаёт текстовую репрезентацию найденных гармонических паттернов для
      * астр карты или карт, по которым построена Астроматрица.
+     * @param detailed  выводить ли подробную статистику по астрам паттернов.
      * @return  заголовок общего Анализа, затем таблицы паттернов для всех комбинаций
      *  отдельных карт: сначала для каждой карты в отдельности, затем для каждого
      *  возможного их сочетания. Если это анализ по многокарте, каждая таблица
      *  анализа предваряется также заголовком.
      */
-    public String getPatternReport() {
+    public String getPatternReport(boolean detailed) {
+        String title = detailed ?
+                "Подробный анализ паттернов для: " :
+                "Анализ паттернов для: ";
         StringBuilder sb = new StringBuilder(
-                Decorator.doubleFrame("Анализ паттернов для: "
-                     + Arrays.stream(heavens).map(Chart::getName).collect(joining(" и "))
+                Decorator.doubleFrame(title
+                        + Arrays.stream(heavens)
+                            .map(Chart::getName)
+                            .collect(joining(" и "))
                 ));
         for (List<Chart> combination : tables.keySet()) {
             if (heavens.length > 1)
                 sb.append(Decorator.asteriskFrame(
-                    combination.stream().map(Chart::getName)
-                            .collect(joining(" и ", "Таблица паттернов для ", ":"))));
-            sb.append(tables.get(combination).getAnalysisRepresentation());
+                        combination.stream().map(Chart::getName)
+                                .collect(joining(" и ", "Таблица паттернов для ", ":"))));
+            PatternAnalysis patterns = tables.get(combination);
+            sb.append(detailed ?
+                    patterns.getFullAnalysisRepresentation() :
+                    patterns.getShortAnalysisRepresentation()
+            );
         }
         return sb.toString();
     }

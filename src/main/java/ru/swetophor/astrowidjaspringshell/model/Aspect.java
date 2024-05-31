@@ -1,13 +1,13 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
 import lombok.Getter;
-import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
+import ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics;
 
 import java.util.List;
 
 import static java.lang.Math.floor;
 import static ru.swetophor.astrowidjaspringshell.model.Harmonics.findMultiplier;
-import static ru.swetophor.astrowidjaspringshell.provider.Mechanics.secondFormat;
+import static ru.swetophor.astrowidjaspringshell.utils.Mechanics.secondFormat;
 
 /**
  * Некоторая установленная для реальной дуги гармоническая кратность.

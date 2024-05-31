@@ -1,15 +1,16 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
+import ru.swetophor.astrowidjaspringshell.config.Settings;
+import ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ru.swetophor.astrowidjaspringshell.config.Settings.*;
-import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.calculateStrength;
-import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.getArcForHarmonic;
-import static ru.swetophor.astrowidjaspringshell.config.Settings.getPrimalOrb;
+import static ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics.calculateStrength;
+import static ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics.getArcForHarmonic;
 
 /**
  * Олицетворяет группу связанных каким-то резонансом точек
@@ -20,6 +21,7 @@ import static ru.swetophor.astrowidjaspringshell.config.Settings.getPrimalOrb;
  */
 @Getter
 public class Pattern {
+
     /**
      * По какому гармоническому числу выделен паттерн.
      */
@@ -41,7 +43,7 @@ public class Pattern {
      */
     private double totalClearance = 0.0;
 
-    private final List<Aspect> aspects = new ArrayList<>();
+//    private final List<Aspect> aspects = new ArrayList<>();
 
     /**
      * Задаёт новый паттерн резонансов по указанной гармонике,
@@ -178,7 +180,7 @@ public class Pattern {
      * Метод вычисляет среднюю силу всех аспектов между всеми астрами.
      *
      * @return условную силу паттерна от -100 до 100, согласно конвенции
-     * {@link ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics#calculateStrength(double, double) calculateStrength()}
+     * {@link CelestialMechanics#calculateStrength(double, double) calculateStrength()}
      */
     public double getAverageStrength() {
         return size() < 2 ?
@@ -195,9 +197,9 @@ public class Pattern {
      * в случае соответствующей настройки для двойных карт.
      */
     private double defineOrb() {
-        return getDimension() > 1 && isHalfOrbsForDoubles() ?
-                getPrimalOrb() / 2 :
-                getPrimalOrb();
+        return getDimension() > 1 && Settings.isHalfOrbsForDoubles() ?
+                Settings.getPrimalOrb() / 2 :
+                Settings.getPrimalOrb();
     }
 
     /**
@@ -207,7 +209,9 @@ public class Pattern {
      * упорядоченных по убыванию средней связанности.
      */
     public String getString() {
-        return getAstrasByConnectivity().stream()
+        return elements.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
                 .map(Astra::getSymbol)
                 .map(Object::toString)
                 .collect(Collectors.joining());

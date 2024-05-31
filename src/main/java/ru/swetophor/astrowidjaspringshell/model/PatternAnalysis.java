@@ -4,10 +4,11 @@ import jakarta.validation.constraints.NotNull;
 import ru.swetophor.astrowidjaspringshell.config.Settings;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.joining;
-import static ru.swetophor.astrowidjaspringshell.provider.Decorator.singularFrame;
+import static ru.swetophor.astrowidjaspringshell.utils.Decorator.singularFrame;
 
 /**
  * Удобная обёртка для представления результатов гармонического анализа карты.
@@ -40,7 +41,6 @@ public class PatternAnalysis implements Iterable<Map.Entry<Integer, List<Pattern
         List<Pattern> patterns = listMap.get(harmonic);
         return patterns == null ? new ArrayList<>() : patterns;
     }
-
 
     public int size() {
         return listMap.size();
@@ -92,7 +92,7 @@ public class PatternAnalysis implements Iterable<Map.Entry<Integer, List<Pattern
      * @return  готовое для текстового вывода представление паттернов
      *  данного разбора узоров для указанного резонансного числа.
      */
-    public String getPatternRepresentation(int harmonic) {
+    public String getDetailedPatternRepresentation(int harmonic) {
         List<Pattern> patterns = listMap.get(harmonic);
         if (patterns == null || patterns.isEmpty())
             return singularFrame("Ни одного паттерна на резонансном числе " + harmonic);
@@ -117,13 +117,13 @@ public class PatternAnalysis implements Iterable<Map.Entry<Integer, List<Pattern
      * Выдаёт многостроку, рассказывающую обо всех паттернах этого сбора узоров.
      * Состоит из последовательно соединённых описаний паттернов по каждой
      * гармонике от 1 до {@link Settings#getEdgeHarmonic}, как то предоставляется
-     * {@link #getPatternRepresentation}
+     * {@link #getDetailedPatternRepresentation}
      * @return описание паттернов по всем анализируемым гармоникам этой
      * карты или сочетания карт.
      */
-    public String getAnalysisRepresentation() {
+    public String getFullAnalysisRepresentation() {
         return IntStream.rangeClosed(1, Settings.getEdgeHarmonic())
-                .mapToObj(this::getPatternRepresentation)
+                .mapToObj(this::getDetailedPatternRepresentation)
                 .collect(joining());
     }
 
@@ -140,5 +140,27 @@ public class PatternAnalysis implements Iterable<Map.Entry<Integer, List<Pattern
     }
 
 
+    public String getShortAnalysisRepresentation() {
+        return IntStream.rangeClosed(1, Settings.getEdgeHarmonic())
+                .mapToObj(this::getPatternRepresentation)
+                .collect(joining());
+    }
 
+    private String getPatternRepresentation(int harmonic) {
+        StringBuilder output = new StringBuilder();
+        listMap
+                .forEach((key, list) -> {
+                    output.append("%d: ".formatted(key));
+                    if (list.isEmpty())
+                        output.append("-\n");
+                    else {
+                        output.append(list.stream()
+                                        .map(Pattern::getString)
+                                        .collect(Collectors.joining(" | ")))
+                                .append("\n");
+                    }
+                });
+        return output.toString();
+
+    }
 }

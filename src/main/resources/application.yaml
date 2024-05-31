@@ -1,9 +1,9 @@
 logging:
   level:
-    root: OFF
+    root: INFO
 spring:
   main:
-    banner-mode: off
+    banner-mode: console
     web-application-type: none
   application:
     name: astrowidja-springshell

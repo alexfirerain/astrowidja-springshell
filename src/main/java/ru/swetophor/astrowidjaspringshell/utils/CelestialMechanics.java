@@ -1,4 +1,4 @@
-package ru.swetophor.astrowidjaspringshell.provider;
+package ru.swetophor.astrowidjaspringshell.utils;
 
 import ru.swetophor.astrowidjaspringshell.config.Settings;
 import ru.swetophor.astrowidjaspringshell.model.Astra;
@@ -19,7 +19,7 @@ public final class CelestialMechanics {
     /**
      * Полкруга в градусах, т.е. 180.
      */
-    static double HALF_CIRCLE = 180.0;
+    public static final double HALF_CIRCLE = 180.0;
 
     /**
      * Вычисляет эклиптическую дугу между двумя точками на большом круге

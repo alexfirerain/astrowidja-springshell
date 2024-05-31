@@ -1,4 +1,4 @@
-package ru.swetophor.astrowidjaspringshell.provider;
+package ru.swetophor.astrowidjaspringshell.utils;
 
 import java.util.Arrays;
 
@@ -172,23 +172,23 @@ public class Decorator {
         System.out.println(text);
     }
 
-    static void print() {
+    public static void print() {
         System.out.println();
     }
 
-    static void printInAsterisk(String text) {
+    public static void printInAsterisk(String text) {
         System.out.println(asteriskFrame(text));
     }
 
-    static void printInFrame(String text) {
+    public static void printInFrame(String text) {
         System.out.println(singularFrame(text));
     }
 
-    static void printInDoubleFrame(String text) {
+    public static void printInDoubleFrame(String text) {
         System.out.println(doubleFrame(text));
     }
 
-    static void printInSemiDouble(String text) {
+    public static void printInSemiDouble(String text) {
         System.out.println(halfDoubleFrame(text));
     }
 }

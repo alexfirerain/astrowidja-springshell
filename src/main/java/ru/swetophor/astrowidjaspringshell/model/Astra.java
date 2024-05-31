@@ -2,14 +2,14 @@ package ru.swetophor.astrowidjaspringshell.model;
 
 import lombok.Getter;
 import lombok.Setter;
-import ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics;
+import ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics;
 
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.getArcForHarmonic;
-import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.normalizeCoordinate;
+import static ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics.getArcForHarmonic;
+import static ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics.normalizeCoordinate;
 
 /**
  * Прототип небесного те́ла — объект,

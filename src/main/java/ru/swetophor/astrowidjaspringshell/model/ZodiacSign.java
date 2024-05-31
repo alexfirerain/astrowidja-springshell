@@ -1,6 +1,6 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
-import static ru.swetophor.astrowidjaspringshell.provider.CelestialMechanics.normalizeCoordinate;
+import static ru.swetophor.astrowidjaspringshell.utils.CelestialMechanics.normalizeCoordinate;
 
 /**
  * Представление зодиакального знака, содержит символ.

@@ -1,6 +1,6 @@
 package ru.swetophor.astrowidjaspringshell.model;
 
-import ru.swetophor.astrowidjaspringshell.provider.Decorator;
+import ru.swetophor.astrowidjaspringshell.utils.Decorator;
 
 import java.util.*;
 
